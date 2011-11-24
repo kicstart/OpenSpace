@@ -10,12 +10,11 @@
       var socket = io.connect('http://'+location.host);
 
       function updatePosition(ship) {
-        console.log('Socket position.set', ship);
         $('#status').html('X: ' + ship.position.x + ' Y: ' + ship.position.y);
       }
 
       $(function() {
-        socket.on('position.set', function(ship) {
+        socket.on('openspace.loop', function(ship) {
           updatePosition(ship);
         });
 
