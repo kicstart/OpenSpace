@@ -18,8 +18,12 @@
           updatePosition(ship);
         });
 
-        $('#update').click(function() {
-          socket.emit('ship.thrust', {shipId: 12345});
+        $('#up').click(function() {
+          socket.emit('ship.noseUp', {shipId: 12345});
+        });
+
+        $('#down').click(function() {
+          socket.emit('ship.noseDown', {shipId: 12345});
         });
 
       });
@@ -36,6 +40,7 @@
 
     <div id="status"></div>
 
-    <button id="update">Update</button>
+    <button id="up">noseUp</button>
+    <button id="down">noseUp</button>
   </body>
 </html>
