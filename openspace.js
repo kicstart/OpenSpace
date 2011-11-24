@@ -4,7 +4,6 @@ var app = express.createServer(),
     io = require('socket.io').listen(app);
 
 var THREE = require('./libs/quaternion.js');
-console.log(THREE.Quaternion());
 
 io.configure(function() {
   io.set('log level', 1);
@@ -38,7 +37,7 @@ var theShip = {
   position:         {x:0, y:0, z:0},
   velocity:         {x:0, y:0, z:0},
   angularVelocity:  {x:0, y:0, z:0},
-  quaterion: new THREE.Quaternion(),
+  quaternion: new THREE.Quaternion(),
   animate:function(){						
     this.position.x += this.velocity.x;						
     this.position.y += this.velocity.y;
@@ -46,20 +45,6 @@ var theShip = {
     
     var yaw, pitch, roll;
     
-    this.rotation.x += this.angularVelocity.x;
-    if (this.rotation.x > Math.PI *2){ this.rotation.x -= Math.PI * 2};
-    if (this.rotation.x < 0){this.rotation.x += Math.PI * 2};
-    //this.model.quaternion.x = this.rotation.x + Math.PI/2; // TODO rotate on relative, not global, axis						
-      
-    this.rotation.y += this.angularVelocity.y;
-    if (this.rotation.y > Math.PI *2){ this.rotation.y -= Math.PI * 2};
-    if (this.rotation.y < 0){this.rotation.y += Math.PI * 2};
-    //this.model.quaternion.y = this.rotation.y; // TODO rotate on relative, not global, axis
-    
-    this.rotation.z += this.angularVelocity.z;
-    if (this.rotation.z > Math.PI *2){ this.rotation.z -= Math.PI * 2};
-    if (this.rotation.z < 0){this.rotation.z += Math.PI * 2};								
-    //this.model.quaternion.z = this.rotation.z + Math.PI/2; // TODO rotate on relative, not global, axis
     yaw = this.angularVelocity.z;
     pitch = this.angularVelocity.y;
     roll = this.angularVelocity.x;
@@ -72,6 +57,7 @@ var theShip = {
 var game = {
   gameTime: 33,
   gameLoop: function() {
+    theShip.animate();
     io.sockets.emit('openspace.loop', theShip);
   }
 }
