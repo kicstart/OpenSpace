@@ -1,0 +1,411 @@
+<!doctype html>
+<html lang="en">
+	<head>
+		<title>three.js webgl - collada</title>
+		<meta charset="utf-8">
+		<meta name="viewport" content="width=device-width, user-scalable=no, minimum-scale=1.0, maximum-scale=1.0">
+		<style>
+			body {
+				font-family: Monospace;
+				background-color: #000000;
+				margin: 0px;
+				overflow: hidden;
+			}
+			
+			#infoBar{
+				color:#fff;
+			}
+			
+			.shipInfo{
+				float:left;
+				margin-left:20px;
+			}
+			
+			#cameraInfo{
+				float:left;
+			}
+		</style>
+	</head>
+	<body>
+		<script src="js/Three.js"></script>
+
+		<script src="js/Detector.js"></script>
+		<script src="js/RequestAnimationFrame.js"></script>
+		<script src="js/Stats.js"></script>
+
+		<script>
+
+			if ( ! Detector.webgl ) Detector.addGetWebGLMessage();
+
+			var container, stats;
+
+			var camera, scene, renderer, objects, sphereMesh;
+			var particleLight, pointLight;
+			var station, dae, skin, shipMesh;
+			
+			var cameraRotate = true;
+			var cameraLock = false;
+					
+			var ship;
+			var infoBar, cameraInfo, shipPosition, shipOrientation, shipVelocity;		
+			
+			var loader = new THREE.ColladaLoader();
+			loader.load( './obj/MassiveStation.dae', function colladaReady( collada ) {
+
+				station = collada.scene;
+				//skin = collada.skins[ 0 ];
+
+				station.scale.x = station.scale.y = station.scale.z = 0.01;
+				station.rotation.x = -Math.PI/2;
+				station.rotation.z = Math.PI/2;
+				station.updateMatrix();
+
+			} );
+			
+			var jLoader = new THREE.ColladaLoader();			
+			jLoader.load('./obj/BattleCruiser.dae', function colladaReady( collada ){
+				dae = collada.scene;
+				//skin = collada.skins[ 0 ]
+				dae.useQuaternion = true;
+				dae.scale.x = dae.scale.y = dae.scale.z = 0.01;
+				dae.quaternion = quaterionFromYawPitchRoll(0,-Math.PI/2, Math.PI/2);				
+				//dae.rotation.x = -Math.PI/2;
+				dae.updateMatrix();
+				init();
+				animate();
+			} );
+			
+			
+			function init() {
+				
+
+				container = document.createElement( 'div' );
+				document.body.appendChild( container );
+
+				camera = new THREE.PerspectiveCamera( 45, window.innerWidth / window.innerHeight, 1, 2000 );
+				camera.position.set( 2, 2, 3 );
+				
+				scene = new THREE.Scene();
+
+				// Sphere
+				sphereMesh = new THREE.Mesh( new THREE.SphereGeometry( 500, 60, 40),  new THREE.MeshBasicMaterial( { map: THREE.ImageUtils.loadTexture( 'images/mars_pannel.jpg' ) } ) );
+				sphereMesh.scale.x = -1;
+				scene.add(sphereMesh);
+				
+				// Grid
+
+				var line_material = new THREE.LineBasicMaterial( { color: 0xcccccc, opacity: 0.2 } ),
+					geometry = new THREE.Geometry(),
+					floor = -0.04, step = 1, size = 14;
+
+				for ( var i = 0; i <= size / step * 2; i ++ ) {
+
+					geometry.vertices.push( new THREE.Vertex( new THREE.Vector3( - size, floor, i * step - size ) ) );
+					geometry.vertices.push( new THREE.Vertex( new THREE.Vector3(   size, floor, i * step - size ) ) );
+
+					geometry.vertices.push( new THREE.Vertex( new THREE.Vector3( i * step - size, floor, -size ) ) );
+					geometry.vertices.push( new THREE.Vertex( new THREE.Vector3( i * step - size, floor,  size ) ) );
+
+				}
+
+				var line = new THREE.Line( geometry, line_material, THREE.LinePieces );
+//				scene.add( line );
+
+				// Add the COLLADA
+				scene.add( station );
+				scene.add( dae );
+
+				particleLight = new THREE.Mesh( new THREE.SphereGeometry( 4, 8, 8 ), new THREE.MeshBasicMaterial( { color: 0xffffff } ) );
+				scene.add( particleLight );
+
+				// Lights
+
+
+				var directionalLight = new THREE.DirectionalLight(/*Math.random() * 0xffffff*/0xeeeeee );
+
+				pointLight = new THREE.PointLight( 0xffffff, 4 );
+				pointLight.position.x = 100000;
+				scene.add( pointLight );
+
+				renderer = new THREE.WebGLRenderer();
+				renderer.setSize( window.innerWidth, window.innerHeight );
+
+				container.appendChild( renderer.domElement );
+				
+				ship = {
+					position:{
+						x:0,
+						y:0,
+						z:0,
+					},
+					velocity:{
+						x:0,
+						y:0,
+						z:0,
+					},
+					angularVelocity:{
+						x:0,
+						y:0,
+						z:0,
+					},
+					rotation:{
+						x:0,
+						y:0,
+						z:0,
+					},
+					model:dae,
+					animate:function(){						
+						this.position.x += this.velocity.x;						
+						this.model.position.x = this.position.x;
+						
+						this.position.y += this.velocity.y;
+						this.model.position.y = this.position.y;
+						
+						this.position.z += this.velocity.z;
+						this.model.position.z = this.position.z;
+						
+						var yaw, pitch, roll;
+						
+						this.rotation.x += this.angularVelocity.x;
+						if (this.rotation.x > Math.PI *2){ this.rotation.x -= Math.PI * 2};
+						if (this.rotation.x < 0){this.rotation.x += Math.PI * 2};
+						//this.model.quaternion.x = this.rotation.x + Math.PI/2; // TODO rotate on relative, not global, axis						
+							
+						this.rotation.y += this.angularVelocity.y;
+						if (this.rotation.y > Math.PI *2){ this.rotation.y -= Math.PI * 2};
+						if (this.rotation.y < 0){this.rotation.y += Math.PI * 2};
+						//this.model.quaternion.y = this.rotation.y; // TODO rotate on relative, not global, axis
+						
+						this.rotation.z += this.angularVelocity.z;
+						if (this.rotation.z > Math.PI *2){ this.rotation.z -= Math.PI * 2};
+						if (this.rotation.z < 0){this.rotation.z += Math.PI * 2};								
+						//this.model.quaternion.z = this.rotation.z + Math.PI/2; // TODO rotate on relative, not global, axis
+						yaw = this.angularVelocity.z;
+						pitch = this.angularVelocity.y;
+						roll = this.angularVelocity.x;
+						this.model.quaternion.multiply(this.model.quaternion, quaterionFromYawPitchRoll(yaw, pitch, roll));
+					},
+				};
+
+				
+				infoBar = document.createElement('div');
+				infoBar.style.position  = 'absolute';
+				infoBar.style.top = '0px';
+				infoBar.style.width = '100%';
+				infoBar.style.height = '100px';
+				infoBar.id = 'infoBar';
+
+				cameraInfo = document.createElement('div');
+				cameraInfo.id = 'cameraInfo';
+				cameraInfo.innerHTML = 'Camera Information';
+				
+				shipPosition = document.createElement('div');
+				shipPosition.className = 'shipInfo';
+				shipPosition.innerHTML = 'Ship Position';
+			
+				shipVelocity = document.createElement('div');
+				shipVelocity.className = 'shipInfo';
+				shipVelocity.innerHTML = 'Ship Velocity'; 
+				
+				shipOrientation = document.createElement('div');
+				shipOrientation.className = 'shipInfo';
+				shipOrientation.innerHTML = 'Ship Orientation';
+				
+				shipAngularVelocity = document.createElement('div');
+				shipAngularVelocity.className = 'shipInfo';
+				shipAngularVelocity.innterHTML = 'Ship Angular Vel.';
+			
+				infoBar.appendChild(cameraInfo);
+				infoBar.appendChild(shipPosition);
+				infoBar.appendChild(shipVelocity);
+				infoBar.appendChild(shipOrientation);
+				infoBar.appendChild(shipAngularVelocity);
+				
+				container.appendChild(infoBar);
+
+				document.onkeydown= returnKey;
+			}
+
+			//
+
+			var t = 0;
+			function animate() {
+
+				requestAnimationFrame( animate );
+
+				if ( t > 30 ) t = 0;
+				
+				ship.animate();
+
+				if ( skin ) {
+
+					// guess this can be done smarter...
+
+					// (Indeed, there are way more frames than needed and interpolation is not used at all
+					//  could be something like - one morph per each skinning pose keyframe, or even less,
+					//  animation could be resampled, morphing interpolation handles sparse keyframes quite well.
+					//  Simple animation cycles like this look ok with 10-15 frames instead of 100 ;)
+
+					for ( var i = 0; i < skin.morphTargetInfluences.length; i++ ) {
+
+						skin.morphTargetInfluences[ i ] = 0;
+
+					}
+
+					skin.morphTargetInfluences[ Math.floor( t ) ] = 1;
+
+					t += 0.5;
+
+				}									
+
+				render();
+				cameraInfo.innerHTML = 'Camera Information:<ul>';
+				cameraInfo.innerHTML += '<li>x: ' + camera.position.x.toFixed(2) + '</li>';
+				cameraInfo.innerHTML += '<li>y: ' + camera.position.y.toFixed(2) + '</li>';
+				cameraInfo.innerHTML += '<li>z: ' + camera.position.z.toFixed(2) + '</li>';
+				cameraInfo.innerHTML += '</ul>';
+				
+				shipPosition.innerHTML = 'Ship Position:<ul>';
+				shipPosition.innerHTML += '<li>x: ' + ship.position.x.toFixed(2) + '</li>';
+				shipPosition.innerHTML += '<li>y: ' + ship.position.y.toFixed(2) + '</li>';
+				shipPosition.innerHTML += '<li>z: ' + ship.position.z.toFixed(2) + '</li>';
+				shipPosition.innterHTML += '</ul>';
+				
+				shipVelocity.innerHTML = 'Ship Velocity: <ul>';
+				shipVelocity.innerHTML += '<li>x: ' + ship.velocity.x.toFixed(3) + '</li>';
+				shipVelocity.innerHTML += '<li>y: ' + ship.velocity.y.toFixed(3) + '</li>';
+				shipVelocity.innerHTML += '<li>z: ' + ship.velocity.z.toFixed(3) + '</li>';
+				shipVelocity.innerHTML += '</ul>';
+	
+				shipOrientation.innerHTML = 'Ship Orientation:<ul>';
+				shipOrientation.innerHTML += '<li>x: ' + ship.rotation.x.toFixed(2) + '</li>';
+				shipOrientation.innerHTML += '<li>y: ' + ship.rotation.y.toFixed(2) + '</li>';
+				shipOrientation.innerHTML += '<li>z: ' + ship.rotation.z.toFixed(2) + ' </li>';
+				shipOrientation.innerHTML += '</ul>';
+				
+				shipAngularVelocity.innerHTML = 'Ship Angular Vel.:<ul>';
+				shipAngularVelocity.innerHTML += '<li>x: ' + ship.angularVelocity.x.toFixed(4) + '</li>';
+				shipAngularVelocity.innerHTML += '<li>y: ' + ship.angularVelocity.y.toFixed(4) + '</li>';
+				shipAngularVelocity.innerHTML += '<li>z: ' + ship.angularVelocity.z.toFixed(4) + '</li>';
+				shipAngularVelocity.innerHTML += '</ul>';
+				
+				sphereMesh.position = ship.position;
+			}
+
+			function render() {
+
+				var timer = new Date().getTime() * 0.00005;
+				
+				if (cameraLock){
+					camera.position.x = ship.position.x + (ship.position.x < 0 ? -10 : 10);
+					camera.position.y = ship.position.y + (ship.position.y < 0 ? -10: 10);
+					camera.position.z = ship.position.z + (ship.position.z < 0 ? -10 : 10);
+					
+					camera.lookAt({x:0,y:0,z:0});
+						
+				} else {
+					if (cameraRotate){
+						camera.position.x = ship.position.x + Math.cos( timer ) * 10;
+						camera.position.z = ship.position.z + Math.sin( timer ) * 10;
+					} else {
+						camera.position.x = ship.position.x + 10;
+						camera.position.z = ship.position.z + 10;
+					};
+					camera.position.y = ship.position.y + 2;
+
+					camera.lookAt( ship.model.position );
+
+				}
+
+				particleLight.position.x = Math.sin( timer * 4 ) * 3009;
+				particleLight.position.y = Math.cos( timer * 5 ) * 4000;
+				particleLight.position.z = Math.cos( timer * 4 ) * 3009;
+
+				renderer.render( scene, camera );			
+			}
+			
+			function quaterionFromYawPitchRoll(yaw, pitch, roll){
+				var q = new THREE.Quaternion();
+				var n1, n2, n3, n4, n5, n6, n7, n8, n9;
+				n9 = roll * 0.5;
+				n6 = Math.sin(n9);
+				n5 = Math.cos(n9);
+				n8 = pitch * 0.5;
+				n4 = Math.sin(n8);
+				n3 = Math.cos(n8);
+				n7 = yaw * 0.5;
+				n2 = Math.sin(n7);
+				n1 = Math.cos(n7);
+				q.x = ((n1 * n4) * n5) + ((n2 * n3) * n6);
+				q.y = ((n2 * n3) * n5) - ((n1 * n4) * n6);
+				q.z = ((n1 * n3) * n6) - ((n2 * n4) * n5);
+				q.w = ((n1 * n3) * n5)  + ((n2 * n4) * n6);
+				
+				return q;
+			
+			}
+			
+			function returnKey(evt) {
+				var evt  = (evt) ? evt : ((event) ? event : null);
+				switch(evt.keyCode){
+				
+					case 67: // c, camera toggle
+						// TODO: just press "c" to toggle through different camera modes
+						if (evt.shiftKey){
+							if (cameraLock){
+								cameraLock = false;
+							} else {
+								cameraLock =  true;
+							};
+						} else {
+							if (cameraRotate){
+								cameraRotate = false;
+							} else {
+								cameraRotate = true;
+							};
+						};
+						break;
+						
+					case 32: // space bar, thruster
+						var direction = ship.model.matrix.getColumnY();
+						//var direction = new THREE.Vector3(ship.model.matrix.n12,
+						//													ship.model.matrix.n22,
+						//													ship.model.matrix.n32);
+						direction.setLength(0.005);  // impulse value, part of ship-specific properties?
+						ship.velocity.x += - direction.x;
+						ship.velocity.y += - direction.y;
+						ship.velocity.z += - direction.z;
+						break;
+						
+					case 38: // up arrow, nose up
+						ship.angularVelocity.y += 0.0001;
+						break;
+						
+					case 40: // down arrow, nose down
+					    ship.angularVelocity.y -= 0.0001;
+						break;
+						
+					case 37: // left arrow, pivot left or roll left
+						if (evt.ctrlKey){
+							ship.angularVelocity.x -= 0.0001;
+						} else {
+							ship.angularVelocity.z -= 0.0001;
+						};
+						break;
+						
+					case 39: // right arrow, pivot right or roll right
+						if (evt.ctrlKey){
+							ship.angularVelocity.x += 0.0001;
+						} else {
+							ship.angularVelocity.z += 0.0001;
+						};
+						break;
+						
+					default:
+						break;
+				}
+			}
+
+		</script>
+	</body>
+</html>
