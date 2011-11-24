@@ -1,0 +1,41 @@
+<!doctype html>
+<html>
+  <head>
+    <title>Socket test</title>
+
+    <script src="//ajax.googleapis.com/ajax/libs/jquery/1.7.0/jquery.min.js"></script>
+    <script src="/socket.io/socket.io.js"></script>
+
+    <script>
+      var socket = io.connect('http://'+location.host);
+
+      function updatePosition(ship) {
+        $('#status').html('X: ' + ship.position.x + ' Y: ' + ship.position.y);
+      }
+
+      $(function() {
+        socket.on('openspace.loop', function(ship) {
+          updatePosition(ship);
+        });
+
+        $('#update').click(function() {
+          socket.emit('ship.thrust', {shipId: 12345});
+        });
+
+      });
+
+    </script>
+
+
+
+  </head>
+
+  <body>
+
+    <h1>Socket tests</h1>
+
+    <div id="status"></div>
+
+    <button id="update">Update</button>
+  </body>
+</html>
