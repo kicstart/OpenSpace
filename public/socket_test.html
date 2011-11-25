@@ -10,7 +10,16 @@
       var socket = io.connect('http://'+location.host);
 
       function updatePosition(ship) {
-        $('#status').html('X: ' + ship.position.x + ' Y: ' + ship.position.y);
+        status = 'pos.x: ' + ship.position.x
+          + ' pos.y: ' + ship.position.y
+          + ' pos.z: ' + ship.position.z
+          + ' vel.x: ' + ship.velocity.x
+          + ' vel.y: ' + ship.velocity.y
+          + ' vel.z: ' + ship.velocity.z
+          + ' ang.x: ' + ship.angularVelocity.x
+          + ' ang.y: ' + ship.angularVelocity.y
+          + ' ang.z: ' + ship.angularVelocity.z;
+        $('#status').html(status);
       }
 
       $(function() {
@@ -26,6 +35,28 @@
           socket.emit('ship.noseDown', {shipId: 12345});
         });
 
+        $('#rollLeft').click(function() {
+          socket.emit('ship.rollLeft', {shipId: 12345});
+        });
+
+        $('#rollRight').click(function() {
+          socket.emit('ship.rollRight', {shipId: 12345});
+        });
+
+        $('#pivotLeft').click(function() {
+          socket.emit('ship.pivotLeft', {shipId: 12345});
+        });
+
+        $('#pivotRight').click(function() {
+          socket.emit('ship.pivotRight', {shipId: 12345});
+        });
+
+        $('#thrust').click(function() {
+          socket.emit('ship.thrust', {shipId: 12345});
+        });
+
+
+
       });
 
     </script>
@@ -39,8 +70,28 @@
     <h1>Socket tests</h1>
 
     <div id="status"></div>
-
+    
+    <div>
     <button id="up">noseUp</button>
-    <button id="down">noseUp</button>
+    <button id="down">noseDown</button>
+    </div>
+  
+    <div>
+      <button id="rollLeft">rollLeft</button>
+      <button id="rollRight">rollRight</button>
+    </div>
+
+    <div>
+      <button id="pivotLeft">pivotLeft</button>
+      <button id="pivotRight">pivotRight</button>
+    </div>
+    
+    <div>
+      <button id="thrust">thrust</button>
+    </div>
+
+    
+
+
   </body>
 </html>

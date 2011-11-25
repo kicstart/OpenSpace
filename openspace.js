@@ -3,7 +3,7 @@ var express = require('express');
 var app = express.createServer(),
     io = require('socket.io').listen(app);
 
-var THREE = require('./libs/quaternion.js');
+var THREE = require('./libs/three.js');
 
 io.configure(function() {
   io.set('log level', 1);
@@ -38,6 +38,7 @@ var theShip = {
   velocity:         {x:0, y:0, z:0},
   angularVelocity:  {x:0, y:0, z:0},
   quaternion: new THREE.Quaternion(),
+  matrix: new THREE.Matrix4(),
   animate:function(){						
     this.position.x += this.velocity.x;						
     this.position.y += this.velocity.y;
@@ -63,13 +64,21 @@ var game = {
 }
 
 setInterval(game.gameLoop, game.gameTime);
+
 setInterval(function() { console.log('Ship state', theShip) }, 1000);
+
 io.sockets.on('connection', function (socket) {
   socket.emit('openspace.welcome', {msg: 'Welcome to OpenSpace'});
 
   socket.on('ship.thrust', function(ship) {
-    theShip.thrust += 0.01;
-    console.log(' Socket: ship.thrust', ship);
+    //  TODO: Do we need to be updateing the matrix from the quaternion like this? I think this is what
+    //  Kyle mentioned to do
+    theShip.matrix.setRotationFromQuaternion(theShip.quaternion);
+    var direction = theShip.matrix.getColumnY();
+    direction.setLength(0.005);  // impulse value, part of ship-specific properties?
+    theShip.velocity.x += - direction.x;
+    theShip.velocity.y += - direction.y;
+    theShip.velocity.z += - direction.z;
   });
 
   socket.on('ship.noseDown', function() {
@@ -79,5 +88,23 @@ io.sockets.on('connection', function (socket) {
   socket.on('ship.noseUp', function() {
     theShip.angularVelocity.y += 0.0001;
   });
+
+  socket.on('ship.rollLeft', function() {
+    theShip.angularVelocity.z -= 0.0001;
+  });
+
+  socket.on('ship.rollRight', function() {
+    theShip.angularVelocity.z += 0.0001;
+  });
+
+  socket.on('ship.pivotLeft', function() {
+    theShip.angularVelocity.x -= 0.0001;
+  });
+
+  socket.on('ship.pivotRight', function() {
+    theShip.angularVelocity.x += 0.0001;
+  });
+
+
 });
 app.listen(7814);
