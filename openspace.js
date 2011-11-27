@@ -13,7 +13,7 @@ app.configure(function() {
   app.use(express.static(__dirname + '/public'));
 });
 
-function quaterionFromYawPitchRoll(yaw, pitch, roll){
+function quaternionFromYawPitchRoll(yaw, pitch, roll){
   var q = new THREE.Quaternion();
   var n1, n2, n3, n4, n5, n6, n7, n8, n9;
   n9 = roll * 0.5;
@@ -37,7 +37,9 @@ var theShip = {
   position:         {x:0, y:0, z:0},
   velocity:         {x:0, y:0, z:0},
   angularVelocity:  {x:0, y:0, z:0},
-  quaternion: new THREE.Quaternion(),
+  scale:            {x:0, y:0, z:0},
+  //quaternion: new THREE.Quaternion(),
+  quaternion: quaternionFromYawPitchRoll(0, -Math.PI/2, Math.PI/2),
   matrix: new THREE.Matrix4(),
   animate:function(){						
     this.position.x += this.velocity.x;						
@@ -49,7 +51,7 @@ var theShip = {
     yaw = this.angularVelocity.z;
     pitch = this.angularVelocity.y;
     roll = this.angularVelocity.x;
-    this.quaternion.multiply(this.quaternion, quaterionFromYawPitchRoll(yaw, pitch, roll));
+    this.quaternion.multiply(this.quaternion, quaternionFromYawPitchRoll(yaw, pitch, roll));
 
   },
 
@@ -59,7 +61,13 @@ var game = {
   gameTime: 33,
   gameLoop: function() {
     theShip.animate();
-    io.sockets.emit('openspace.loop', theShip);
+    io.sockets.emit('openspace.loop', {position:theShip.position,
+                                       velocity:theShip.velocity,
+                                       angularVelocity:theShip.angularVelocity,
+                                       quaternion:{x:theShip.quaternion.x,
+                                                   y:theShip.quaternion.y,
+                                                   z:theShip.quaternion.z,
+                                                   w:theShip.quaternion.w}});
   }
 }
 
@@ -73,6 +81,8 @@ io.sockets.on('connection', function (socket) {
   socket.on('ship.thrust', function(ship) {
     //  TODO: Do we need to be updateing the matrix from the quaternion like this? I think this is what
     //  Kyle mentioned to do
+    theShip.matrix.setPosition(theShip.position);
+    theShip.matrix.scale = theShip.scale;
     theShip.matrix.setRotationFromQuaternion(theShip.quaternion);
     var direction = theShip.matrix.getColumnY();
     direction.setLength(0.005);  // impulse value, part of ship-specific properties?
@@ -82,29 +92,34 @@ io.sockets.on('connection', function (socket) {
   });
 
   socket.on('ship.noseDown', function() {
-    theShip.angularVelocity.y -= 0.0001;
-  });
-
-  socket.on('ship.noseUp', function() {
     theShip.angularVelocity.y += 0.0001;
   });
 
-  socket.on('ship.rollLeft', function() {
-    theShip.angularVelocity.z -= 0.0001;
+  socket.on('ship.noseUp', function() {
+    theShip.angularVelocity.y -= 0.0001;
   });
 
-  socket.on('ship.rollRight', function() {
+  socket.on('ship.rollLeft', function() {
     theShip.angularVelocity.z += 0.0001;
   });
 
-  socket.on('ship.pivotLeft', function() {
-    theShip.angularVelocity.x -= 0.0001;
+  socket.on('ship.rollRight', function() {
+    theShip.angularVelocity.z -= 0.0001;
   });
 
-  socket.on('ship.pivotRight', function() {
+  socket.on('ship.pivotLeft', function() {
     theShip.angularVelocity.x += 0.0001;
   });
 
+  socket.on('ship.pivotRight', function() {
+    theShip.angularVelocity.x -= 0.0001;
+  });
 
+  socket.on('ship.devReset', function() {
+    theShip.position.x = theShip.position.y = theShip.position.z = 0;
+    theShip.velocity.x = theShip.velocity.y = theShip.velocity.z = 0;
+    theShip.angularVelocity.x = theShip.angularVelocity.y = theShip.angularVelocity.z = 0;
+    theShip.quaternion = quaternionFromYawPitchRoll(0, -Math.PI/2, Math.PI/2); 
+  });
 });
-app.listen(7814);
+app.listen(7815);
