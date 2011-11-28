@@ -1,7 +1,7 @@
 <!doctype html>
 <html lang="en">
 	<head>
-		<title>World Render Test</title>
+		<title>Integration</title>
 		<meta charset="utf-8">
 		<meta name="viewport" content="width=device-width, user-scalable=no, minimum-scale=1.0, maximum-scale=1.0">
 		<style>
@@ -28,7 +28,7 @@
 	</head>
 	<body>
 		<script src="js/Three.js"></script>
-
+                <script src="/socket.io/socket.io.js"></script>
 		<script src="js/Detector.js"></script>
 		<script src="js/RequestAnimationFrame.js"></script>
 		<script src="js/Stats.js"></script>
@@ -36,6 +36,11 @@
 		<script>
 
 			if ( ! Detector.webgl ) Detector.addGetWebGLMessage();
+                        
+                        var socket = io.connect('http://'+location.host);
+                        socket.on('openspace.loop', function(ship_signal){
+                          updatePosition(ship_signal);
+                        });
 
 			var container, stats;
 
@@ -46,7 +51,42 @@
 			var cameraRotate = true;
 			var cameraLock = false;
 					
-			var ship;
+			var ship = {
+					position:{
+						x:0,
+						y:0,
+						z:0,
+					},
+					velocity:{
+						x:0,
+						y:0,
+						z:0,
+					},
+					angularVelocity:{
+						x:0,
+						y:0,
+						z:0,
+					},
+					model:NaN,
+					animate:function(){						
+						this.position.x += this.velocity.x;						
+						this.model.position.x = this.position.x;
+						
+						this.position.y += this.velocity.y;
+						this.model.position.y = this.position.y;
+						
+						this.position.z += this.velocity.z;
+						this.model.position.z = this.position.z;
+						
+						var yaw, pitch, roll;
+						yaw = this.angularVelocity.z;
+						pitch = this.angularVelocity.y;
+						roll = this.angularVelocity.x;
+						this.model.quaternion.multiply(this.model.quaternion, quaterionFromYawPitchRoll(yaw, pitch, roll));
+					},
+
+                        };
+
 			var infoBar, cameraInfo, shipPosition, shipOrientation, shipVelocity;		
 			
 			var loader = new THREE.ColladaLoader();
@@ -68,13 +108,21 @@
 				//skin = collada.skins[ 0 ]
 				dae.useQuaternion = true;
 				dae.scale.x = dae.scale.y = dae.scale.z = 0.01;
-				dae.quaternion = quaterionFromYawPitchRoll(0,-Math.PI/2, Math.PI/2);				
-				//dae.rotation.x = -Math.PI/2;
 				dae.updateMatrix();
 				init();
 				animate();
 			} );
 			
+                        
+                        function updatePosition(ship_signal) {
+                          ship.position = ship_signal.position;
+                          ship.velocity = ship_signal.velocity;
+                          ship.angularVelocity = ship_signal.angularVelocity;
+                          ship.model.quaternion.set(ship_signal.quaternion.x,
+                                                    ship_signal.quaternion.y,
+                                                    ship_signal.quaternion.z,
+                                                    ship_signal.quaternion.w);
+                        }
 			
 			function init() {
 				
@@ -132,61 +180,7 @@
 
 				container.appendChild( renderer.domElement );
 				
-				ship = {
-					position:{
-						x:0,
-						y:0,
-						z:0,
-					},
-					velocity:{
-						x:0,
-						y:0,
-						z:0,
-					},
-					angularVelocity:{
-						x:0,
-						y:0,
-						z:0,
-					},
-					rotation:{
-						x:0,
-						y:0,
-						z:0,
-					},
-					model:dae,
-					animate:function(){						
-						this.position.x += this.velocity.x;						
-						this.model.position.x = this.position.x;
-						
-						this.position.y += this.velocity.y;
-						this.model.position.y = this.position.y;
-						
-						this.position.z += this.velocity.z;
-						this.model.position.z = this.position.z;
-						
-						var yaw, pitch, roll;
-						
-						this.rotation.x += this.angularVelocity.x;
-						if (this.rotation.x > Math.PI *2){ this.rotation.x -= Math.PI * 2};
-						if (this.rotation.x < 0){this.rotation.x += Math.PI * 2};
-						//this.model.quaternion.x = this.rotation.x + Math.PI/2; // TODO rotate on relative, not global, axis						
-							
-						this.rotation.y += this.angularVelocity.y;
-						if (this.rotation.y > Math.PI *2){ this.rotation.y -= Math.PI * 2};
-						if (this.rotation.y < 0){this.rotation.y += Math.PI * 2};
-						//this.model.quaternion.y = this.rotation.y; // TODO rotate on relative, not global, axis
-						
-						this.rotation.z += this.angularVelocity.z;
-						if (this.rotation.z > Math.PI *2){ this.rotation.z -= Math.PI * 2};
-						if (this.rotation.z < 0){this.rotation.z += Math.PI * 2};								
-						//this.model.quaternion.z = this.rotation.z + Math.PI/2; // TODO rotate on relative, not global, axis
-						yaw = this.angularVelocity.z;
-						pitch = this.angularVelocity.y;
-						roll = this.angularVelocity.x;
-						this.model.quaternion.multiply(this.model.quaternion, quaterionFromYawPitchRoll(yaw, pitch, roll));
-					},
-				};
-
+				ship.model = dae;
 				
 				infoBar = document.createElement('div');
 				infoBar.style.position  = 'absolute';
@@ -207,10 +201,6 @@
 				shipVelocity.className = 'shipInfo';
 				shipVelocity.innerHTML = 'Ship Velocity'; 
 				
-				shipOrientation = document.createElement('div');
-				shipOrientation.className = 'shipInfo';
-				shipOrientation.innerHTML = 'Ship Orientation';
-				
 				shipAngularVelocity = document.createElement('div');
 				shipAngularVelocity.className = 'shipInfo';
 				shipAngularVelocity.innterHTML = 'Ship Angular Vel.';
@@ -218,7 +208,6 @@
 				infoBar.appendChild(cameraInfo);
 				infoBar.appendChild(shipPosition);
 				infoBar.appendChild(shipVelocity);
-				infoBar.appendChild(shipOrientation);
 				infoBar.appendChild(shipAngularVelocity);
 				
 				container.appendChild(infoBar);
@@ -277,12 +266,6 @@
 				shipVelocity.innerHTML += '<li>z: ' + ship.velocity.z.toFixed(3) + '</li>';
 				shipVelocity.innerHTML += '</ul>';
 	
-				shipOrientation.innerHTML = 'Ship Orientation:<ul>';
-				shipOrientation.innerHTML += '<li>x: ' + ship.rotation.x.toFixed(2) + '</li>';
-				shipOrientation.innerHTML += '<li>y: ' + ship.rotation.y.toFixed(2) + '</li>';
-				shipOrientation.innerHTML += '<li>z: ' + ship.rotation.z.toFixed(2) + ' </li>';
-				shipOrientation.innerHTML += '</ul>';
-				
 				shipAngularVelocity.innerHTML = 'Ship Angular Vel.:<ul>';
 				shipAngularVelocity.innerHTML += '<li>x: ' + ship.angularVelocity.x.toFixed(4) + '</li>';
 				shipAngularVelocity.innerHTML += '<li>y: ' + ship.angularVelocity.y.toFixed(4) + '</li>';
@@ -344,7 +327,7 @@
 				return q;
 			
 			}
-			
+		        	
 			function returnKey(evt) {
 				var evt  = (evt) ? evt : ((event) ? event : null);
 				switch(evt.keyCode){
@@ -367,40 +350,35 @@
 						break;
 						
 					case 32: // space bar, thruster
-						var direction = ship.model.matrix.getColumnY();
-						//var direction = new THREE.Vector3(ship.model.matrix.n12,
-						//													ship.model.matrix.n22,
-						//													ship.model.matrix.n32);
-						direction.setLength(0.005);  // impulse value, part of ship-specific properties?
-						ship.velocity.x += - direction.x;
-						ship.velocity.y += - direction.y;
-						ship.velocity.z += - direction.z;
-						break;
+						socket.emit('ship.thrust', {shipId: 12345});
+                                                break;
 						
 					case 38: // up arrow, nose up
-						ship.angularVelocity.y += 0.0001;
-						break;
+						socket.emit('ship.noseUp', {shipId: 12345});
+                                                break;
 						
 					case 40: // down arrow, nose down
-					    ship.angularVelocity.y -= 0.0001;
-						break;
+						socket.emit('ship.noseDown', {shipId: 12345});
+                                                break;
 						
 					case 37: // left arrow, pivot left or roll left
 						if (evt.ctrlKey){
-							ship.angularVelocity.x -= 0.0001;
+                                                  socket.emit('ship.pivotLeft', {shipId: 12345});
 						} else {
-							ship.angularVelocity.z -= 0.0001;
+					          socket.emit('ship.rollLeft', {shipId: 12345});
 						};
 						break;
 						
 					case 39: // right arrow, pivot right or roll right
 						if (evt.ctrlKey){
-							ship.angularVelocity.x += 0.0001;
+						  socket.emit('ship.pivotRight', {shipId: 12345});
 						} else {
-							ship.angularVelocity.z += 0.0001;
+						  socket.emit('ship.rollRight', {shipId: 12345});
 						};
 						break;
-						
+                                        case 82: // r ~ Reset in dev mode
+                                                socket.emit('ship.devReset', {shipId: 12345});
+                                                break;						
 					default:
 						break;
 				}
