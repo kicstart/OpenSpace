@@ -52,7 +52,6 @@ var theShip = {
     pitch = this.angularVelocity.y;
     roll = this.angularVelocity.x;
     this.quaternion.multiply(this.quaternion, quaternionFromYawPitchRoll(yaw, pitch, roll));
-
   },
 
 }
@@ -121,5 +120,6 @@ io.sockets.on('connection', function (socket) {
     theShip.angularVelocity.x = theShip.angularVelocity.y = theShip.angularVelocity.z = 0;
     theShip.quaternion = quaternionFromYawPitchRoll(0, -Math.PI/2, Math.PI/2); 
   });
+
 });
-app.listen(7815);
+app.listen(7814);
