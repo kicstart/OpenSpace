@@ -9,22 +9,29 @@
     <script>
       var socket = io.connect('http://'+location.host);
 
-      function updatePosition(ship) {
-        status = 'pos.x: ' + ship.position.x
-          + ' pos.y: ' + ship.position.y
-          + ' pos.z: ' + ship.position.z
-          + ' vel.x: ' + ship.velocity.x
-          + ' vel.y: ' + ship.velocity.y
-          + ' vel.z: ' + ship.velocity.z
-          + ' ang.x: ' + ship.angularVelocity.x
-          + ' ang.y: ' + ship.angularVelocity.y
-          + ' ang.z: ' + ship.angularVelocity.z;
+      function updateWorld(world) {
+        status = '';
+
+        for (var i = 0; i < world.ships.length; i++) {
+          var ship = world.ships[i];
+          status += 'ship ' + ship.id 
+            + ' pos.x: ' + ship.position.x
+            + ' pos.y: ' + ship.position.y
+            + ' pos.z: ' + ship.position.z
+            + ' vel.x: ' + ship.velocity.x
+            + ' vel.y: ' + ship.velocity.y
+            + ' vel.z: ' + ship.velocity.z
+            + ' ang.x: ' + ship.angularVelocity.x
+            + ' ang.y: ' + ship.angularVelocity.y
+            + ' ang.z: ' + ship.angularVelocity.z
+            + ' <br>';
+        }
         $('#status').html(status);
       }
 
       $(function() {
-        socket.on('openspace.loop', function(ship) {
-          updatePosition(ship);
+        socket.on('openspace.loop', function(world) {
+          updateWorld(world);
         });
 
         $('#up').click(function() {
