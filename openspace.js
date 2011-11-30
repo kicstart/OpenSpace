@@ -1,6 +1,7 @@
 var express       = require('express'),
     connect       = require('connect'),
-    sessionStore  = new express.session.MemoryStore();
+    sessionStore  = new express.session.MemoryStore(),
+    _             = require('underscore')._; // underscore saves much headache
 
 var app = express.createServer(),
     io = require('socket.io').listen(app);
@@ -41,7 +42,9 @@ function quaternionFromYawPitchRoll(yaw, pitch, roll){
   return q;
 }
 
+var shipCounter = 0;
 function Ship(x,y,z) {
+  this.id = ++shipCounter;
   this.position   = {};
   this.position.x = x || 0;
   this.position.y = y || 0;
@@ -61,26 +64,40 @@ function Ship(x,y,z) {
     
     var yaw, pitch, roll;
     
-    yaw = this.angularVelocity.z;
+    yaw   = this.angularVelocity.z;
     pitch = this.angularVelocity.y;
-    roll = this.angularVelocity.x;
+    roll  = this.angularVelocity.x;
     this.quaternion.multiply(this.quaternion, quaternionFromYawPitchRoll(yaw, pitch, roll));
+  }
+
+  this.getState = function() {
+    return {
+      id              : this.id,
+      position        : this.position,
+      velocity        : this.velocity,
+      angularVelocity : this.angularVelocity,
+      quaternion      : {
+        x : this.quaternion.x,
+        y : this.quaternion.y,
+        z : this.quaternion.z,
+        w : this.quaternion.w,
+      },
+    }
   }
 
 }
 
-var theShip = new Ship();
+var ships = new Array();
 var game = {
   gameTime: 33,
   gameLoop: function() {
-    theShip.animate();
-    io.sockets.emit('openspace.loop', {position:theShip.position,
-                                       velocity:theShip.velocity,
-                                       angularVelocity:theShip.angularVelocity,
-                                       quaternion:{x:theShip.quaternion.x,
-                                                   y:theShip.quaternion.y,
-                                                   z:theShip.quaternion.z,
-                                                   w:theShip.quaternion.w}});
+    var states = [];
+    _.each(ships, function(ship) {
+      ship.animate();
+      states.push(ship);
+    });
+
+    io.sockets.emit('openspace.loop', {ships: states});
   }
 }
 
@@ -120,12 +137,25 @@ io.sockets.on('connection', function (socket) {
   socket.on('disconnect', function() {
     clearInterval(sessionIntervalId);
   });
+  
+  // assign a ship by id to the session
+  // We can't just set the ship into the session as it can't persist
+  // objects with their member functions, so we just need to retrieve
+  // the ship by it's id
+  var theShip = null; // called theShip for now, for reference below
+  if (typeof session.shipId === 'undefined' ) {
+    // first time here? get yer'self a ship!
+    theShip = new Ship();
+    session.shipId = theShip.id;
+    session.save();
+    ships.push(theShip);
+  } else {
+    // otherwise find the ship in the ships array
+    theShip = _.find(ships, function(ship) { return ship.id == session.shipId});
+  }
 
-  // assign the ship
-  // TODO: Assign a ship to the session
-
-  console.log(' [*] Client connection, sid: ' + session.id)
-  socket.emit('openspace.welcome', {msg: 'Welcome to OpenSpace'});
+  console.log(' [*] Client connection, sid: ' + session.id + ' shipId: ' + session.shipId)
+  socket.emit('openspace.welcome', {msg: 'Welcome to OpenSpace', ship: theShip});
 
   socket.on('ship.thrust', function(ship) {
     //  TODO: Do we need to be updateing the matrix from the quaternion like this? I think this is what
