@@ -1,4 +1,6 @@
-var express = require('express');
+var express       = require('express'),
+    connect       = require('connect'),
+    sessionStore  = new express.session.MemoryStore();
 
 var app = express.createServer(),
     io = require('socket.io').listen(app);
@@ -10,6 +12,12 @@ io.configure(function() {
 });
 
 app.configure(function() {
+  app.use(express.cookieParser());
+  app.use(express.session({
+    store   : sessionStore,
+    secret  : 'the cake is a L13!!!',
+    key     : 'express.sid'}));
+
   app.use(express.static(__dirname + '/public'));
 });
 
@@ -72,9 +80,45 @@ var game = {
 
 setInterval(game.gameLoop, game.gameTime);
 
-setInterval(function() { console.log('Ship state', theShip) }, 1000);
+// this is noisy
+//setInterval(function() { console.log('Ship state', theShip) }, 1000);
+
+
+// Setup socket auth to require a session
+io.set('authorization', function (data, ack) {
+  if (data.headers.cookie) {
+    data.cookie       = connect.utils.parseCookie(data.headers.cookie);
+    data.sessionId    = data.cookie['express.sid'];
+    data.sessionStore = sessionStore;
+    sessionStore.load(data.sessionId, function (err, session) {
+      if (err || !session) {
+        ack('Error', false)
+      } else {
+        data.session = session;
+        ack(null, true);
+      }
+    });
+  } else {
+    return ack(null, true);
+  }
+});
 
 io.sockets.on('connection', function (socket) {
+  var session = socket.handshake.session; // the session variable for this connection/user;
+  var sessionIntervalId = setInterval(function () {
+    session.reload(function() {
+      session.touch.save();
+    });
+  }, 60 * 1000); // touch the session every 60 seconds;
+
+  socket.on('disconnect', function() {
+    clearInterval(sessionIntervalId);
+  });
+
+  // assign the ship
+  // TODO: Assign a ship to the session
+
+  console.log(' [*] Client connection, sid: ' + session.id)
   socket.emit('openspace.welcome', {msg: 'Welcome to OpenSpace'});
 
   socket.on('ship.thrust', function(ship) {
