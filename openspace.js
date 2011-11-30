@@ -41,15 +41,20 @@ function quaternionFromYawPitchRoll(yaw, pitch, roll){
   return q;
 }
 
-var theShip = {
-  position:         {x:0, y:0, z:0},
-  velocity:         {x:0, y:0, z:0},
-  angularVelocity:  {x:0, y:0, z:0},
-  scale:            {x:0, y:0, z:0},
-  //quaternion: new THREE.Quaternion(),
-  quaternion: quaternionFromYawPitchRoll(0, -Math.PI/2, Math.PI/2),
-  matrix: new THREE.Matrix4(),
-  animate:function(){						
+function Ship(x,y,z) {
+  this.position   = {};
+  this.position.x = x || 0;
+  this.position.y = y || 0;
+  this.position.z = z || 0;
+  
+  this.velocity         = {x:0,y:0,z:0};
+  this.angularVelocity  = {x:0, y:0, z:0};
+  this.scale            = {x:0, y:0, z:0};
+
+  this.quaternion       = quaternionFromYawPitchRoll(0, -Math.PI/2, Math.PI/2);
+  this.matrix           = new THREE.Matrix4(),
+
+  this.animate = function() {
     this.position.x += this.velocity.x;						
     this.position.y += this.velocity.y;
     this.position.z += this.velocity.z;
@@ -60,10 +65,11 @@ var theShip = {
     pitch = this.angularVelocity.y;
     roll = this.angularVelocity.x;
     this.quaternion.multiply(this.quaternion, quaternionFromYawPitchRoll(yaw, pitch, roll));
-  },
+  }
 
 }
 
+var theShip = new Ship();
 var game = {
   gameTime: 33,
   gameLoop: function() {
@@ -107,7 +113,7 @@ io.sockets.on('connection', function (socket) {
   var session = socket.handshake.session; // the session variable for this connection/user;
   var sessionIntervalId = setInterval(function () {
     session.reload(function() {
-      session.touch.save();
+      session.touch().save();
     });
   }, 60 * 1000); // touch the session every 60 seconds;
 
