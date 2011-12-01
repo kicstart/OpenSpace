@@ -58,7 +58,7 @@ function Ship(type,x,y,z) {
   this.scale            = {x:0, y:0, z:0};
 
   this.quaternion       = quaternionFromYawPitchRoll(0, -Math.PI/2, Math.PI/2);
-  this.matrix           = new THREE.Matrix4(),
+  this.matrix           = new THREE.Matrix4();
 
   this.animate = function() {
     this.position.x += this.velocity.x;						
@@ -112,7 +112,6 @@ function Ship(type,x,y,z) {
       this.angularVelocity.x = this.angularVelocity.y = this.angularVelocity.z = 0;
       this.quaternion = quaternionFromYawPitchRoll(0, -Math.PI/2, Math.PI/2); 
     }
-
   }
 
   this.getState = function() {
