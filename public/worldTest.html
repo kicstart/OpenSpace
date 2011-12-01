@@ -28,13 +28,10 @@
 	</head>
 	<body>
 		<script src="js/Three.js"></script>
-
 		<script src="js/Detector.js"></script>
 		<script src="js/RequestAnimationFrame.js"></script>
 		<script src="js/Stats.js"></script>
-
 		<script>
-
 			if ( ! Detector.webgl ) Detector.addGetWebGLMessage();
 
 			var container, stats;
@@ -77,8 +74,6 @@
 			
 			
 			function init() {
-				
-
 				container = document.createElement( 'div' );
 				document.body.appendChild( container );
 
@@ -93,7 +88,6 @@
 				scene.add(sphereMesh);
 				
 				// Grid
-
 				var line_material = new THREE.LineBasicMaterial( { color: 0xcccccc, opacity: 0.2 } ),
 					geometry = new THREE.Geometry(),
 					floor = -0.04, step = 1, size = 14;
@@ -119,8 +113,6 @@
 				scene.add( particleLight );
 
 				// Lights
-
-
 				var directionalLight = new THREE.DirectionalLight(/*Math.random() * 0xffffff*/0xeeeeee );
 
 				pointLight = new THREE.PointLight( 0xffffff, 4 );
@@ -400,7 +392,7 @@
 							ship.angularVelocity.z += 0.0001;
 						};
 						break;
-						
+
 					default:
 						break;
 				}

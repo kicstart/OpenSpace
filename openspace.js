@@ -57,7 +57,7 @@ function Ship(type,x,y,z) {
   this.angularVelocity  = {x:0, y:0, z:0};
   this.scale            = {x:0, y:0, z:0};
 
-  this.quaternion       = quaternionFromYawPitchRoll(0, -Math.PI/2, Math.PI/2);
+  this.quaternion       = quaternionFromYawPitchRoll(0, 0, 0);
   this.matrix           = new THREE.Matrix4();
 
   this.torpedoes        = new Array();
@@ -81,11 +81,11 @@ function Ship(type,x,y,z) {
     this.matrix.setPosition(this.position);
     this.matrix.scale = this.scale;
     this.matrix.setRotationFromQuaternion(this.quaternion);
-    var direction = this.matrix.getColumnY();
+    var direction = this.matrix.getColumnZ();
     direction.setLength(impulse);  // impulse value, part of ship-specific properties?
-    this.velocity.x += - direction.x;
-    this.velocity.y += - direction.y;
-    this.velocity.z += - direction.z;
+    this.velocity.x +=  direction.x;
+    this.velocity.y +=  direction.y;
+    this.velocity.z +=  direction.z;
   }
 
   this.thrust = function(type) {
