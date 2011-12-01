@@ -75,12 +75,14 @@ function Ship(type,x,y,z) {
     this.quaternion.multiply(this.quaternion, quaternionFromYawPitchRoll(yaw, pitch, roll));
   }
 
-  this.drive = function() {
+  this.drive = function(impulse) {
+    impulse = impulse || 0.005;
+
     this.matrix.setPosition(this.position);
     this.matrix.scale = this.scale;
     this.matrix.setRotationFromQuaternion(this.quaternion);
     var direction = this.matrix.getColumnY();
-    direction.setLength(0.005);  // impulse value, part of ship-specific properties?
+    direction.setLength(impulse);  // impulse value, part of ship-specific properties?
     this.velocity.x += - direction.x;
     this.velocity.y += - direction.y;
     this.velocity.z += - direction.z;
@@ -130,6 +132,20 @@ function Ship(type,x,y,z) {
         w : this.quaternion.w,
       },
     }
+  }
+
+  // useful for intiliziting the position of a torpedo
+  this.setState = function(state) {
+    this.position         = _.clone(state.position);
+    this.velocity         = _.clone(state.velocity);
+    this.angularVelocity  = _.clone(state.angularVelocity);
+
+    quaternion = _.clone(state.quaternion);
+
+    this.quaternion.x     = quaternion.x;
+    this.quaternion.y     = quaternion.y;
+    this.quaternion.z     = quaternion.z;
+    this.quaternion.w     = quaternion.w;
   }
 }
 
@@ -233,6 +249,8 @@ io.sockets.on('connection', function (socket) {
 
   socket.on('torpedo.fire', function() {
     var torpedo = new Ship('torpedo');
+    torpedo.setState(theShip.getState());
+    torpedo.drive(0.1);
     theShip.torpedoes.push(torpedo);
   });
 

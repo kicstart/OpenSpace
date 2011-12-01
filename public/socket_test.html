@@ -39,6 +39,9 @@
         socket.on('openspace.loop', function(world) {
           updateWorld(world);
         });
+        socket.on('openspace.welcome', function(message) {
+          console.log(message);
+        });
 
         $('#up').click(function() {
           socket.emit('ship.thrust', {type: 'noseUp', shipId: 12345});
