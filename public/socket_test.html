@@ -35,31 +35,31 @@
         });
 
         $('#up').click(function() {
-          socket.emit('ship.noseUp', {shipId: 12345});
+          socket.emit('ship.thrust', {type: 'noseUp', shipId: 12345});
         });
 
         $('#down').click(function() {
-          socket.emit('ship.noseDown', {shipId: 12345});
+          socket.emit('ship.thrust', {type: 'noseDown', shipId: 12345});
         });
 
         $('#rollLeft').click(function() {
-          socket.emit('ship.rollLeft', {shipId: 12345});
+          socket.emit('ship.thrust', {type: 'rollLeft', shipId: 12345});
         });
 
         $('#rollRight').click(function() {
-          socket.emit('ship.rollRight', {shipId: 12345});
+          socket.emit('ship.thrust', {type: 'rollRight', shipId: 12345});
         });
 
         $('#pivotLeft').click(function() {
-          socket.emit('ship.pivotLeft', {shipId: 12345});
+          socket.emit('ship.thrust', {type: 'pivotLeft', shipId: 12345});
         });
 
         $('#pivotRight').click(function() {
-          socket.emit('ship.pivotRight', {shipId: 12345});
+          socket.emit('ship.thrust', {type: 'pivotRight', shipId: 12345});
         });
 
         $('#thrust').click(function() {
-          socket.emit('ship.thrust', {shipId: 12345});
+          socket.emit('ship.drive', {shipId: 12345});
         });
 
 

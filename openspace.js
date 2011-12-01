@@ -73,7 +73,7 @@ function Ship(type,x,y,z) {
     this.quaternion.multiply(this.quaternion, quaternionFromYawPitchRoll(yaw, pitch, roll));
   }
 
-  this.thrust = function() {
+  this.drive = function() {
     this.matrix.setPosition(this.position);
     this.matrix.scale = this.scale;
     this.matrix.setRotationFromQuaternion(this.quaternion);
@@ -82,6 +82,30 @@ function Ship(type,x,y,z) {
     this.velocity.x += - direction.x;
     this.velocity.y += - direction.y;
     this.velocity.z += - direction.z;
+  }
+
+  this.thrust = function(type) {
+    switch (type) {
+      case 'noseDown':
+        this.angularVelocity.y += 0.0001;
+        break;
+      case 'noseUp':
+        this.angularVelocity.y -= 0.0001;
+        break;
+      case 'rollLeft':
+        this.angularVelocity.z += 0.0001;
+        break;
+      case 'rollRight':
+        this.angularVelocity.z -= 0.0001;
+        break;
+      case 'pivotLeft':
+        this.angularVelocity.x += 0.0001;
+        break;
+      case 'pivotRight':
+        this.angularVelocity.x -= 0.0001;
+        break;
+    }
+
   }
 
   this.getState = function() {
@@ -159,6 +183,9 @@ io.sockets.on('connection', function (socket) {
   // the ship by it's id
   var theShip = null; // called theShip for now, for reference below
   if (typeof session.shipId === 'undefined' ) {
+    // TODO: This will occasionally error out if the client is still running while the node server get's restarted
+    // possible solution is to use the sessionID to identify the ship
+
     // first time here? get yer'self a ship!
     theShip = new Ship('ship');
     session.shipId = theShip.id;
@@ -172,34 +199,14 @@ io.sockets.on('connection', function (socket) {
   console.log(' [*] Client connection, sid: ' + session.id + ' shipId: ' + session.shipId)
   socket.emit('openspace.welcome', {msg: 'Welcome to OpenSpace', ship: theShip});
 
-  socket.on('ship.thrust', function(ship) {
+  socket.on('ship.drive', function(ship) {
     //  TODO: Do we need to be updateing the matrix from the quaternion like this? I think this is what
     //  Kyle mentioned to do
-    theShip.thrust();
+    theShip.drive();
   });
 
-  socket.on('ship.noseDown', function() {
-    theShip.angularVelocity.y += 0.0001;
-  });
-
-  socket.on('ship.noseUp', function() {
-    theShip.angularVelocity.y -= 0.0001;
-  });
-
-  socket.on('ship.rollLeft', function() {
-    theShip.angularVelocity.z += 0.0001;
-  });
-
-  socket.on('ship.rollRight', function() {
-    theShip.angularVelocity.z -= 0.0001;
-  });
-
-  socket.on('ship.pivotLeft', function() {
-    theShip.angularVelocity.x += 0.0001;
-  });
-
-  socket.on('ship.pivotRight', function() {
-    theShip.angularVelocity.x -= 0.0001;
+  socket.on('ship.thrust', function(message) {
+    theShip.thrust(message.type);
   });
 
   socket.on('ship.devReset', function() {
