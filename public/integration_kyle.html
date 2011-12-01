@@ -74,19 +74,16 @@
 
 			function updatePosition(worldSignal) {
 				  world = worldSignal;
-				  for (var i=0; i<worldSignal.ships.length; i++){
-					list_ship = worldSignal.ships[i];
-				    if (list_ship.id === ship.id) {
-						  latest = list_ship;
-						  ship.position = list_ship.position;
-						  ship.velocity = list_ship.velocity;
-						  ship.angularVelocity = list_ship.angularVelocity;
-						  ship.model.quaternion.set(list_ship.quaternion.x,
-																list_ship.quaternion.y,
-																list_ship.quaternion.z,
-																list_ship.quaternion.w);
-				    }
-				  };
+                                  var s = worldSignal.ships[ship.id];
+				  ship.position = s.position;
+				  ship.velocity = s.velocity;
+				  ship.angularVelocity = s.angularVelocity;
+				  ship.model.quaternion.set(s.quaternion.x,
+                                                            s.quaternion.y,
+                                                            s.quaternion.z,
+                                                            s.quaternion.w);
+				  
+				  
 				};			
 						
 			var msg, latest, world;

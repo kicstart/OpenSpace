@@ -162,15 +162,15 @@ var game = {
   gameLoop: function() {
 
     // create an array of all the objects
-    var shipStates = [];
-    var torpStates = [];
+    var shipStates = {};
+    var torpStates = {};
     _.each(ships, function(ship) {
       ship.animate();
-      shipStates.push(ship.getState());
+      shipStates[ship.id] = ship.getState();
 
       _.each(ship.torpedoes, function(torpedo) {
         torpedo.animate();
-        torpStates.push(torpedo.getState());  
+        torpStates[torpedo.id] = torpedo.getState();  
       })
     });
 
@@ -229,9 +229,9 @@ io.sockets.on('connection', function (socket) {
     // first time here? get yer'self a ship!
     theShip = new Ship(
       'ship',
-      Math.random() * 500,  
-      Math.random() * 500,  
-      Math.random() * 500
+      Math.random() * 1000 - 500,  
+      Math.random() * 1000 - 500,  
+      Math.random() * 1000 - 500
     );
     session.shipId = theShip.id;
     session.save();
