@@ -145,7 +145,11 @@ io.sockets.on('connection', function (socket) {
   var theShip = null; // called theShip for now, for reference below
   if (typeof session.shipId === 'undefined' ) {
     // first time here? get yer'self a ship!
-    theShip = new Ship();
+    theShip = new Ship(
+      Math.random() * 500,  
+      Math.random() * 500,  
+      Math.random() * 500
+    );
     session.shipId = theShip.id;
     session.save();
     ships.push(theShip);
