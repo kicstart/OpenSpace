@@ -43,8 +43,11 @@ function quaternionFromYawPitchRoll(yaw, pitch, roll){
 }
 
 var shipCounter = 0;
-function Ship(x,y,z) {
+function Ship(type,x,y,z) {
   this.id = ++shipCounter;
+
+  this.type = type || 'ship'
+
   this.position   = {};
   this.position.x = x || 0;
   this.position.y = y || 0;
@@ -70,6 +73,17 @@ function Ship(x,y,z) {
     this.quaternion.multiply(this.quaternion, quaternionFromYawPitchRoll(yaw, pitch, roll));
   }
 
+  this.thrust = function() {
+    this.matrix.setPosition(this.position);
+    this.matrix.scale = this.scale;
+    this.matrix.setRotationFromQuaternion(this.quaternion);
+    var direction = this.matrix.getColumnY();
+    direction.setLength(0.005);  // impulse value, part of ship-specific properties?
+    this.velocity.x += - direction.x;
+    this.velocity.y += - direction.y;
+    this.velocity.z += - direction.z;
+  }
+
   this.getState = function() {
     return {
       id              : this.id,
@@ -88,6 +102,7 @@ function Ship(x,y,z) {
 }
 
 var ships = new Array();
+
 var game = {
   gameTime: 33,
   gameLoop: function() {
@@ -145,7 +160,7 @@ io.sockets.on('connection', function (socket) {
   var theShip = null; // called theShip for now, for reference below
   if (typeof session.shipId === 'undefined' ) {
     // first time here? get yer'self a ship!
-    theShip = new Ship();
+    theShip = new Ship('ship');
     session.shipId = theShip.id;
     session.save();
     ships.push(theShip);
@@ -160,14 +175,7 @@ io.sockets.on('connection', function (socket) {
   socket.on('ship.thrust', function(ship) {
     //  TODO: Do we need to be updateing the matrix from the quaternion like this? I think this is what
     //  Kyle mentioned to do
-    theShip.matrix.setPosition(theShip.position);
-    theShip.matrix.scale = theShip.scale;
-    theShip.matrix.setRotationFromQuaternion(theShip.quaternion);
-    var direction = theShip.matrix.getColumnY();
-    direction.setLength(0.005);  // impulse value, part of ship-specific properties?
-    theShip.velocity.x += - direction.x;
-    theShip.velocity.y += - direction.y;
-    theShip.velocity.z += - direction.z;
+    theShip.thrust();
   });
 
   socket.on('ship.noseDown', function() {
