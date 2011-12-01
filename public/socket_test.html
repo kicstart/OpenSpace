@@ -9,12 +9,8 @@
     <script>
       var socket = io.connect('http://'+location.host);
 
-      function updateWorld(world) {
-        status = '';
-
-        for (var i = 0; i < world.ships.length; i++) {
-          var ship = world.ships[i];
-          status += 'ship ' + ship.id 
+      function getShipStateString(ship) {
+            return ship.type + ' ' + ship.id 
             + ' pos.x: ' + ship.position.x
             + ' pos.y: ' + ship.position.y
             + ' pos.z: ' + ship.position.z
@@ -25,6 +21,16 @@
             + ' ang.y: ' + ship.angularVelocity.y
             + ' ang.z: ' + ship.angularVelocity.z
             + ' <br>';
+      }
+
+      function updateWorld(world) {
+        status = '';
+
+        for (var i = 0; i < world.ships.length; i++) {
+          status += getShipStateString(world.ships[i]);
+        }
+        for (var i = 0; i < world.torpedoes.length; i++) {
+          status += getShipStateString(world.torpedoes[i]);
         }
         $('#status').html(status);
       }
@@ -62,6 +68,10 @@
           socket.emit('ship.drive', {shipId: 12345});
         });
 
+        $('#torp').click(function() {
+          socket.emit('torpedo.fire', {shipId: 12345});
+        })
+
 
 
       });
@@ -97,7 +107,9 @@
       <button id="thrust">thrust</button>
     </div>
 
-    
+    <div>
+      <button id="torp">Fire!!</button>
+    </div>
 
 
   </body>

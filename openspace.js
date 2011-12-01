@@ -60,6 +60,8 @@ function Ship(type,x,y,z) {
   this.quaternion       = quaternionFromYawPitchRoll(0, -Math.PI/2, Math.PI/2);
   this.matrix           = new THREE.Matrix4();
 
+  this.torpedoes        = new Array();
+
   this.animate = function() {
     this.position.x += this.velocity.x;						
     this.position.y += this.velocity.y;
@@ -105,18 +107,19 @@ function Ship(type,x,y,z) {
         this.angularVelocity.x -= 0.0001;
         break;
     }
+  }
 
-    this.reset = function() {
-      this.position.x = this.position.y = this.position.z = 0;
-      this.velocity.x = this.velocity.y = this.velocity.z = 0;
-      this.angularVelocity.x = this.angularVelocity.y = this.angularVelocity.z = 0;
-      this.quaternion = quaternionFromYawPitchRoll(0, -Math.PI/2, Math.PI/2); 
-    }
+  this.reset = function() {
+    this.position.x = this.position.y = this.position.z = 0;
+    this.velocity.x = this.velocity.y = this.velocity.z = 0;
+    this.angularVelocity.x = this.angularVelocity.y = this.angularVelocity.z = 0;
+    this.quaternion = quaternionFromYawPitchRoll(0, -Math.PI/2, Math.PI/2); 
   }
 
   this.getState = function() {
     return {
       id              : this.id,
+      type            : this.type,
       position        : this.position,
       velocity        : this.velocity,
       angularVelocity : this.angularVelocity,
@@ -128,7 +131,6 @@ function Ship(type,x,y,z) {
       },
     }
   }
-
 }
 
 var ships = new Array();
@@ -136,13 +138,22 @@ var ships = new Array();
 var game = {
   gameTime: 33,
   gameLoop: function() {
-    var states = [];
+    // create an array of all the objects
+    var shipStates = [];
+    var torpStates = [];
     _.each(ships, function(ship) {
       ship.animate();
-      states.push(ship);
+      shipStates.push(ship.getState());
+
+      _.each(ship.torpedoes, function(torpedo) {
+        torpedo.animate();
+        torpStates.push(torpedo.getState());  
+      })
     });
 
-    io.sockets.emit('openspace.loop', {ships: states});
+    //create an array of all the torpedoes
+
+    io.sockets.emit('openspace.loop', {ships: shipStates, torpedoes: torpStates});
   }
 }
 
@@ -193,7 +204,12 @@ io.sockets.on('connection', function (socket) {
     // possible solution is to use the sessionID to identify the ship
 
     // first time here? get yer'self a ship!
-    theShip = new Ship('ship');
+    theShip = new Ship(
+      'ship',
+      Math.random() * 500,  
+      Math.random() * 500,  
+      Math.random() * 500
+    );
     session.shipId = theShip.id;
     session.save();
     ships.push(theShip);
@@ -213,6 +229,11 @@ io.sockets.on('connection', function (socket) {
 
   socket.on('ship.thrust', function(message) {
     theShip.thrust(message.type);
+  });
+
+  socket.on('torpedo.fire', function() {
+    var torpedo = new Ship('torpedo');
+    theShip.torpedoes.push(torpedo);
   });
 
   socket.on('ship.devReset', function() {
