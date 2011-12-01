@@ -121,6 +121,7 @@ function Ship(type,x,y,z) {
   this.getState = function() {
     return {
       id              : this.id,
+      ownerId         : this.ownerId,
       type            : this.type,
       position        : this.position,
       velocity        : this.velocity,
@@ -153,7 +154,13 @@ var ships = new Array();
 
 var game = {
   gameTime: 33,
+  // main game loop
+  //
+  // This function calculates new location values for the ships
+  // and creates a JSON world representation object to communicate to clients
+  // on the openspace.loop socket topic
   gameLoop: function() {
+
     // create an array of all the objects
     var shipStates = [];
     var torpStates = [];
@@ -248,8 +255,10 @@ io.sockets.on('connection', function (socket) {
   });
 
   socket.on('torpedo.fire', function() {
+    // TODO: it would be great if this were integrated into the ship object
     var torpedo = new Ship('torpedo');
     torpedo.setState(theShip.getState());
+    torpedo.ownerId = theShip.id; // set a reference to the owning ship
     torpedo.drive(0.1);
     theShip.torpedoes.push(torpedo);
   });
