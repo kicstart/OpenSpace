@@ -106,6 +106,13 @@ function Ship(type,x,y,z) {
         break;
     }
 
+    this.reset = function() {
+      this.position.x = this.position.y = this.position.z = 0;
+      this.velocity.x = this.velocity.y = this.velocity.z = 0;
+      this.angularVelocity.x = this.angularVelocity.y = this.angularVelocity.z = 0;
+      this.quaternion = quaternionFromYawPitchRoll(0, -Math.PI/2, Math.PI/2); 
+    }
+
   }
 
   this.getState = function() {
@@ -210,10 +217,7 @@ io.sockets.on('connection', function (socket) {
   });
 
   socket.on('ship.devReset', function() {
-    theShip.position.x = theShip.position.y = theShip.position.z = 0;
-    theShip.velocity.x = theShip.velocity.y = theShip.velocity.z = 0;
-    theShip.angularVelocity.x = theShip.angularVelocity.y = theShip.angularVelocity.z = 0;
-    theShip.quaternion = quaternionFromYawPitchRoll(0, -Math.PI/2, Math.PI/2); 
+    theShip.reset();
   });
 
 });
