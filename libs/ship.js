@@ -1,3 +1,5 @@
+var _             = require('underscore')._; // underscore saves much headache
+
 var OpenSpace = {};
 
 OpenSpace.quaternionFromYawPitchRoll = function(yaw, pitch, roll){

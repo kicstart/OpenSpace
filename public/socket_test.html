@@ -5,9 +5,10 @@
 
     <script src="//ajax.googleapis.com/ajax/libs/jquery/1.7.0/jquery.min.js"></script>
     <script src="/socket.io/socket.io.js"></script>
+    <script src="/js/vendors/underscore-min.js"></script>
 
     <script>
-      var socket = io.connect('http://'+location.host);
+
 
       function getShipStateString(ship) {
             return ship.type + ' ' + ship.id 
@@ -27,21 +28,27 @@
       function updateWorld(world) {
         status = '';
 
-        for (var i = 0; i < world.ships.length; i++) {
-          status += getShipStateString(world.ships[i]);
-        }
-        for (var i = 0; i < world.torpedoes.length; i++) {
-          status += getShipStateString(world.torpedoes[i]);
-        }
+        _.each(world.ships, function(ship) {
+          status += getShipStateString(ship);
+        })
+
+        _.each(world.torpedoes, function (torpedo) {
+          status += getShipStateString(torpedo);
+        })
         $('#status').html(status);
       }
 
       $(function() {
+        var socket = io.connect('http://'+location.host);
+
+        var ship = null
+        socket.on('openspace.welcome', function(welcome) {
+          ship = welcome.ship; // set server assigned ship to my local ship reference
+          $('#message').html(welcome.msg + ' your ship is id:' + ship.id);
+        });
+
         socket.on('openspace.loop', function(world) {
           updateWorld(world);
-        });
-        socket.on('openspace.welcome', function(message) {
-          console.log(message);
         });
 
         $('#up').click(function() {
@@ -89,6 +96,8 @@
   <body>
 
     <h1>Socket tests</h1>
+
+    <div id="message"></div>
 
     <div id="status"></div>
     

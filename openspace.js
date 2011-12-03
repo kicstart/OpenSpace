@@ -135,7 +135,8 @@ io.sockets.on('connection', function (socket) {
 
   socket.on('torpedo.fire', function() {
     // TODO: it would be great if this were integrated into the ship object
-    var torpedo = new Ship('torpedo');
+    var torpedo = new OpenSpace.Ship('torpedo');
+    torpedo.id = ++shipCounter;
     torpedo.setState(ship.getState());
     torpedo.ownerId = ship.id; // set a reference to the owning ship
     torpedo.drive(0.1);
