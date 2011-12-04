@@ -44,13 +44,28 @@
         var ship = null
         socket.on('openspace.welcome', function(welcome) {
           ship = welcome.ship; // set server assigned ship to my local ship reference
-          $('#message').html(welcome.msg + ' your ship is id:' + ship.id);
+          $('#message').append('<div>' + welcome.msg + ' your ship is id:' + ship.id + '</div>');
+        });
+
+        socket.on('openspace.new.ship', function(data) {
+          $('#message').append('<div>' + data.msg + ' ' + data.ship.id + '</div>');
+        });
+
+        socket.on('openspace.new.torpedo', function(data) {
+          $('#message').append('<div>' + data.msg + ' ' + data.torpedo.id + '</div>');
+        });
+
+        socket.on('openspace.destruct.ship', function(data) {
+          $('#message').append('<div>' + data.msg + ' type: ' + data.type + ' ' + data.ship.id + '</div>'); 
         });
 
         socket.on('openspace.loop', function(world) {
           updateWorld(world);
         });
 
+        $('#destruct').click(function() {
+          socket.emit('ship.destruct', {shipId: 12345});
+        });
         $('#up').click(function() {
           socket.emit('ship.thrust', {type: 'noseUp', shipId: 12345});
         });
@@ -80,7 +95,9 @@
         });
 
         $('#torp').click(function() {
-          socket.emit('torpedo.fire', {shipId: 12345});
+          socket.emit('torpedo.fire', {shipId: 12345}, function(torpedo){
+            $('#message').append('<div>I fired a torpedo ' + torpedo.id + '</div>');
+          });
         })
 
 
@@ -98,9 +115,11 @@
     <h1>Socket tests</h1>
 
     <div id="message"></div>
-
-    <div id="status"></div>
     
+    <div>
+      <button id="destruct">destruct</button>
+    </div>
+
     <div>
     <button id="up">noseUp</button>
     <button id="down">noseDown</button>
@@ -125,5 +144,7 @@
     </div>
 
 
+
+    <div id="status"></div>
   </body>
 </html>
