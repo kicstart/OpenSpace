@@ -45,6 +45,7 @@
         socket.on('openspace.welcome', function(welcome) {
           ship = welcome.ship; // set server assigned ship to my local ship reference
           $('#message').append('<div>' + welcome.msg + ' your ship is id:' + ship.id + '</div>');
+          console.log('Welcome received', welcome);
         });
 
         socket.on('openspace.new.ship', function(data) {

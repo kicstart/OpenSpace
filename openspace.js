@@ -36,26 +36,30 @@ var game = {
   // on the openspace.loop socket topic
   gameLoop: function() {
 
-    // create an array of all the objects
-    var shipStates = {};
-    var torpStates = {};
-    _.each(ships, function(ship) {
-      ship.animate();
-      shipStates[ship.id] = ship.getState();
-
-      _.each(ship.torpedoes, function(torpedo) {
-        torpedo.animate();
-        torpStates[torpedo.id] = torpedo.getState();  
-      })
-    });
 
     //create an array of all the torpedoes
 
-    io.sockets.emit('openspace.loop', {ships: shipStates, torpedoes: torpStates});
+    io.sockets.emit('openspace.loop', this.getWorldState());
+  },
+
+  getWorldState: function() {
+    // create an array of all the objects
+    var shipStates = [];
+    var torpStates = [];
+    _.each(ships, function(ship) {
+      ship.animate();
+      shipStates.push(ship.getState());
+
+      _.each(ship.torpedoes, function(torpedo) {
+        torpedo.animate();
+        torpStates.push(torpedo.getState());  
+      })
+    });
+    return {ships: shipStates, torpedoes: torpStates};
   }
 }
 
-setInterval(game.gameLoop, game.gameTime);
+setInterval(_.bind(game.gameLoop, game), game.gameTime);
 
 // this is noisy
 //setInterval(function() { console.log('Ship state', ship) }, 1000);
@@ -123,7 +127,7 @@ io.sockets.on('connection', function (socket) {
   }
 
   console.log(' [*] Client connection, sid: ' + session.id + ' shipId: ' + session.shipId)
-  socket.emit('openspace.welcome', {msg: 'Welcome to OpenSpace', ship: ship});
+  socket.emit('openspace.welcome', {msg: 'Welcome to OpenSpace', ship: ship, world: game.getWorldState()});
   socket.broadcast.emit('openspace.new.ship', {msg: 'Ship detected', ship: ship.getState()}); // tell everyone (but us) that we arrived
 
   socket.on('ship.drive', function(data) {
