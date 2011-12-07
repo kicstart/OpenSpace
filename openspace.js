@@ -115,7 +115,7 @@ function Ship(type,x,y,z) {
     this.position.x = this.position.y = this.position.z = 0;
     this.velocity.x = this.velocity.y = this.velocity.z = 0;
     this.angularVelocity.x = this.angularVelocity.y = this.angularVelocity.z = 0;
-    this.quaternion = quaternionFromYawPitchRoll(0, -Math.PI/2, Math.PI/2); 
+   this.quaternion = quaternionFromYawPitchRoll(0, 0, 0); 
   }
 
   this.getState = function() {
@@ -160,27 +160,30 @@ var game = {
   // and creates a JSON world representation object to communicate to clients
   // on the openspace.loop socket topic
   gameLoop: function() {
+    //create an array of all the torpedoes
 
+    io.sockets.emit('openspace.loop', this.getWorldState());
+  },
+
+  getWorldState: function(){
+    
     // create an array of all the objects
-    var shipStates = {};
-    var torpStates = {};
+    var shipStates = [];
+    var torpStates = [];
     _.each(ships, function(ship) {
       ship.animate();
-      shipStates[ship.id] = ship.getState();
+      shipStates.push(ship.getState());
 
       _.each(ship.torpedoes, function(torpedo) {
         torpedo.animate();
-        torpStates[torpedo.id] = torpedo.getState();  
+        torpStates.push(torpedo.getState());  
       })
     });
-
-    //create an array of all the torpedoes
-
-    io.sockets.emit('openspace.loop', {ships: shipStates, torpedoes: torpStates});
+    return {ships: shipStates, torpedoes: torpStates};
   }
 }
 
-setInterval(game.gameLoop, game.gameTime);
+setInterval(_.bind(game.gameLoop, game), game.gameTime);
 
 // this is noisy
 //setInterval(function() { console.log('Ship state', theShip) }, 1000);
@@ -236,13 +239,14 @@ io.sockets.on('connection', function (socket) {
     session.shipId = theShip.id;
     session.save();
     ships.push(theShip);
+    io.sockets.emit('openspace.newShip', {shipID: theShip.id});
   } else {
     // otherwise find the ship in the ships array
     theShip = _.find(ships, function(ship) { return ship.id == session.shipId});
   }
 
   console.log(' [*] Client connection, sid: ' + session.id + ' shipId: ' + session.shipId)
-  socket.emit('openspace.welcome', {msg: 'Welcome to OpenSpace', ship: theShip});
+  socket.emit('openspace.welcome', {msg: 'Welcome to OpenSpace', ship: theShip, world: game.getWorldState()});
 
   socket.on('ship.drive', function(ship) {
     //  TODO: Do we need to be updateing the matrix from the quaternion like this? I think this is what
@@ -268,4 +272,4 @@ io.sockets.on('connection', function (socket) {
   });
 
 });
-app.listen(7814);
+app.listen(7815);
