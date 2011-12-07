@@ -120,13 +120,26 @@
             s.id = world.ships[i].id;
             ships[s.id] = s;
           };
+          // Add the Torpedo Meshs
+          for (var i=0; i<world.torpedoes.length; i++){
+            var t = new Ship(shipClasses.TorpedoMkI);
+            t.id = world.torpedoes[i].id;
+            torpedoes[t.id] = t;
+          };
           init();
           animate();
         });
         socket.on('openspace.newShip',function(message){
           var newShip = new Ship(shipClasses.MartianBattleCruiser);
+          newShip.id = message.shipID;
           ships[message.shipID] = newShip;
-          newShip.load(function(){scene.add(newShip.mesh)});
+          newShip.load(function(mesh){scene.add(mesh)});
+        });
+        socket.on('openspace.new.torpedo',function(message){
+          var t = new Ship(shipClasses.TorpedoMkI);
+          t.id = message.torpedo.id;
+          torpedoes[message.torpedo.id] = t;
+          t.load(function(mesh){scene.add(mesh)});
         });
 
 // callback chain
@@ -156,6 +169,10 @@
        for (var sid in ships){
          ships[sid].load(function(mesh){scene.add(mesh)});
        }; 
+       // Add the Torpedos
+       for (var tid in torpedoes){
+         torpedoes[tid].load(function(mesh){scene.add(mesh)});
+       };
 
         particleLight = new THREE.Mesh( new THREE.SphereGeometry( 4, 8, 8 ), new THREE.MeshBasicMaterial( { color: 0xffffff } ) );
         scene.add( particleLight );
@@ -215,6 +232,7 @@
         if ( t > 30 ) t = 0;
         
         for (var shipID in ships) ships[shipID].animate();
+        for (var tID in torpedoes) torpedoes[tID].animate();
                           
         var s = ships[shipID];
 
@@ -319,7 +337,15 @@
               };
             };
             break;
-            
+          case 84: // fire torpedoes
+            socket.emit('torpedo.fire', {shipId: shipID}, function(newTorp){
+              var t = new Ship(shipClasses.TorpedoMkI);
+              t.id = newTorp.id;
+              torpedoes[t.id] = t;
+              t.load(function(mesh){scene.add(mesh)});
+            });
+            break;
+      
           case 32: // space bar, thruster
             socket.emit('ship.drive', {shipId: 12345});
                                                 break;
