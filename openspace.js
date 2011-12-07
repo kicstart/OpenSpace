@@ -24,7 +24,6 @@ app.configure(function() {
   app.use(express.static(__dirname + '/public'));
 });
 
-
 var ships = new Array();
 
 var game = {
@@ -35,8 +34,6 @@ var game = {
   // and creates a JSON world representation object to communicate to clients
   // on the openspace.loop socket topic
   gameLoop: function() {
-
-
     //create an array of all the torpedoes
 
     io.sockets.emit('openspace.loop', this.getWorldState());
