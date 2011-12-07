@@ -5,9 +5,10 @@
 
     <script src="//ajax.googleapis.com/ajax/libs/jquery/1.7.0/jquery.min.js"></script>
     <script src="/socket.io/socket.io.js"></script>
+    <script src="/js/vendors/underscore-min.js"></script>
 
     <script>
-      var socket = io.connect('http://'+location.host);
+
 
       function getShipStateString(ship) {
             return ship.type + ' ' + ship.id 
@@ -27,23 +28,45 @@
       function updateWorld(world) {
         status = '';
 
-        for (var i = 0; i < world.ships.length; i++) {
-          status += getShipStateString(world.ships[i]);
-        }
-        for (var i = 0; i < world.torpedoes.length; i++) {
-          status += getShipStateString(world.torpedoes[i]);
-        }
+        _.each(world.ships, function(ship) {
+          status += getShipStateString(ship);
+        })
+
+        _.each(world.torpedoes, function (torpedo) {
+          status += getShipStateString(torpedo);
+        })
         $('#status').html(status);
       }
 
       $(function() {
+        var socket = io.connect('http://'+location.host);
+
+        var ship = null
+        socket.on('openspace.welcome', function(welcome) {
+          ship = welcome.ship; // set server assigned ship to my local ship reference
+          $('#message').append('<div>' + welcome.msg + ' your ship is id:' + ship.id + '</div>');
+          console.log('Welcome received', welcome);
+        });
+
+        socket.on('openspace.new.ship', function(data) {
+          $('#message').append('<div>' + data.msg + ' ' + data.ship.id + '</div>');
+        });
+
+        socket.on('openspace.new.torpedo', function(data) {
+          $('#message').append('<div>' + data.msg + ' ' + data.torpedo.id + '</div>');
+        });
+
+        socket.on('openspace.destruct.ship', function(data) {
+          $('#message').append('<div>' + data.msg + ' type: ' + data.type + ' ' + data.ship.id + '</div>'); 
+        });
+
         socket.on('openspace.loop', function(world) {
           updateWorld(world);
         });
-        socket.on('openspace.welcome', function(message) {
-          console.log(message);
-        });
 
+        $('#destruct').click(function() {
+          socket.emit('ship.destruct', {shipId: 12345});
+        });
         $('#up').click(function() {
           socket.emit('ship.thrust', {type: 'noseUp', shipId: 12345});
         });
@@ -73,7 +96,9 @@
         });
 
         $('#torp').click(function() {
-          socket.emit('torpedo.fire', {shipId: 12345});
+          socket.emit('torpedo.fire', {shipId: 12345}, function(torpedo){
+            $('#message').append('<div>I fired a torpedo ' + torpedo.id + '</div>');
+          });
         })
 
 
@@ -90,8 +115,12 @@
 
     <h1>Socket tests</h1>
 
-    <div id="status"></div>
+    <div id="message"></div>
     
+    <div>
+      <button id="destruct">destruct</button>
+    </div>
+
     <div>
     <button id="up">noseUp</button>
     <button id="down">noseDown</button>
@@ -116,5 +145,7 @@
     </div>
 
 
+
+    <div id="status"></div>
   </body>
 </html>
