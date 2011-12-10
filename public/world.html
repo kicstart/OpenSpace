@@ -1,0 +1,390 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <title>OpenSpace :: World View</title>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, user-scalable=no, minimum-scale=1.0, maximum-scale=1.0">
+    <style>
+      body {
+        font-family: Monospace;
+        background-color: #000000;
+        margin: 0px;
+        overflow: hidden;
+      }
+      
+      #infoBar{
+        color:#fff;
+      }
+      
+      .shipInfo{
+        float:left;
+        margin-left:20px;
+      }
+      
+      #cameraInfo{
+        float:left;
+      }
+    </style>
+  </head>
+  <body>
+    <script src="js/Three.js"></script>
+    <script src="/socket.io/socket.io.js"></script>
+    <script src="js/RequestAnimationFrame.js"></script>
+    <script src="js/Stats.js"></script>
+    <script src="js/Ship.js"></script>  
+            
+    <script>
+// variables
+      var shipID;
+      var ships = {};
+      var torpedoes = {};
+      var world;
+      var newWorldFlag = false;    
+      var msg, latest, world;
+      var socket;
+      var container, stats;
+        
+      var scene = new THREE.Scene();
+      var camera, renderer, objects, sphereMesh;
+      var particleLight, pointLight;
+      var station, skin;
+      
+      var cameraRotate = true;
+      var cameraLock = false;            
+      var infoBar, cameraInfo, shipPosition, shipOrientation, shipVelocity;    
+      
+      var jLoader = new THREE.JSONLoader(true);      
+
+// functions
+      function updatePosition(worldSignal) {
+          world = worldSignal;
+          for(var i=0;i<world.ships.length;i++){
+            var m = world.ships[i];
+            ships[m.id].position = m.position;
+            ships[m.id].velocity = m.velocity;
+            ships[m.id].angularVelocity = m.angularVelocity;
+            ships[m.id].mesh.quaternion.set(
+              m.quaternion.x, m.quaternion.y, m.quaternion.z, m.quaternion.w
+            ); 
+          };
+          for(var i=0;i<world.torpedoes.length;i++){
+            var torp = world.torpedoes[i];
+            torpedoes[torp.id].position = torp.position;
+            torpedoes[torp.id].velocity = torp.velocity;
+            torpedoes[torp.id].angularVelocity = torp.angularVelocity;
+            torpedoes[torp.id].mesh.quaternion.set(
+              torp.quaternion.x, torp.quaternion.y, torp.quaternion.z, torp.quaternion.w
+            );
+          };
+      };    
+  
+      function loadWorld(callback){
+        sphereMesh = new THREE.Mesh( 
+          new THREE.SphereGeometry( 1500, 60, 40),  
+          new THREE.MeshBasicMaterial( {
+            map: THREE.ImageUtils.loadTexture( 'images/sun_pannel.jpg' ) } 
+          )
+        );
+        sphereMesh.scale.x = -1;
+                                if (callback !== undefined) callback();
+      };
+                       
+      function loadBerth(callback){
+        jLoader.load(
+          'obj/berth.js', 
+          function(geo){
+            geo.materials[0].shading = THREE.FlatShading;
+            var material = new THREE.MeshFaceMaterial();
+            station = new THREE.Mesh(geo, material);
+            station.scale.set(0.01, 0.01, 0.01);
+            station.updateMatrix();
+            station.castShadow = true;
+            if (callback !== undefined) callback();
+          }, 
+          'obj/'
+         );
+       };
+
+// listeners      
+        socket = io.connect('http://'+location.host);
+        socket.on('openspace.loop', function(ship_signal){
+          updatePosition(ship_signal);
+        });
+        socket.on('openspace.welcome',function(message){
+          msg = message;
+          shipID = msg.ship.id;
+          // Add the Ships Mesh
+          world = msg.world;
+          console.log(message);
+          for (var i=0;i<world.ships.length;i++){
+            var s = new Ship(shipClasses.MartianDestroyer);
+            s.id = world.ships[i].id;
+            ships[s.id] = s;
+          };
+          // Add the Torpedo Meshs
+          for (var i=0; i<world.torpedoes.length; i++){
+            var t = new Ship(shipClasses.TorpedoMkI);
+            t.id = world.torpedoes[i].id;
+            torpedoes[t.id] = t;
+          };
+          init();
+          animate();
+        });
+        socket.on('openspace.newShip',function(message){
+          var newShip = new Ship(shipClasses.MartianDestroyer);
+          newShip.id = message.shipID;
+          ships[message.shipID] = newShip;
+          newShip.load(function(mesh){scene.add(mesh)});
+        });
+        socket.on('openspace.new.torpedo',function(message){
+          var t = new Ship(shipClasses.TorpedoMkI);
+          t.id = message.torpedo.id;
+          torpedoes[message.torpedo.id] = t;
+          t.load(function(mesh){scene.add(mesh)});
+        });
+
+// callback chain
+        loadWorld(function(){
+          loadBerth(function(){
+            })
+          });
+      
+// init
+// animate
+// render
+      function init() {
+        document.onkeydown= returnKey;
+        container = document.createElement( 'div' );
+        document.body.appendChild( container );
+
+        camera = new THREE.PerspectiveCamera( 45, window.innerWidth / window.innerHeight, 1, 2000 );
+        camera.position.set( 2, 2, 3 );
+        
+        // Sphere
+        scene.add(sphereMesh);
+
+        // Add the Station 
+        scene.add( station );
+
+        // Add the Ships
+       for (var sid in ships){
+         ships[sid].load(function(mesh){scene.add(mesh)});
+       }; 
+       // Add the Torpedos
+       for (var tid in torpedoes){
+         torpedoes[tid].load(function(mesh){scene.add(mesh)});
+       };
+
+        particleLight = new THREE.Mesh( new THREE.SphereGeometry( 4, 8, 8 ), new THREE.MeshBasicMaterial( { color: 0xffffff } ) );
+        scene.add( particleLight );
+
+        // Lights
+
+
+        var directionalLight = new THREE.DirectionalLight(/*Math.random() * 0xffffff*/0xeeeeee );
+
+        pointLight = new THREE.PointLight( 0xffffff, 10 );
+        pointLight.position.x = -100000;
+        scene.add( pointLight );
+
+        renderer = new THREE.WebGLRenderer();
+        renderer.setSize( window.innerWidth, window.innerHeight );
+
+        container.appendChild( renderer.domElement );
+      
+        
+        infoBar = document.createElement('div');
+        infoBar.style.position  = 'absolute';
+        infoBar.style.top = '0px';
+        infoBar.style.width = '100%';
+        infoBar.style.height = '100px';
+        infoBar.id = 'infoBar';
+
+        cameraInfo = document.createElement('div');
+        cameraInfo.id = 'cameraInfo';
+        cameraInfo.innerHTML = 'Camera Information';
+        
+        shipPosition = document.createElement('div');
+        shipPosition.className = 'shipInfo';
+        shipPosition.innerHTML = 'Ship Position';
+      
+        shipVelocity = document.createElement('div');
+        shipVelocity.className = 'shipInfo';
+        shipVelocity.innerHTML = 'Ship Velocity'; 
+        
+        shipAngularVelocity = document.createElement('div');
+        shipAngularVelocity.className = 'shipInfo';
+        shipAngularVelocity.innterHTML = 'Ship Angular Vel.';
+      
+        infoBar.appendChild(cameraInfo);
+        infoBar.appendChild(shipPosition);
+        infoBar.appendChild(shipVelocity);
+        infoBar.appendChild(shipAngularVelocity);
+        
+        container.appendChild(infoBar);
+      }
+
+      //
+
+      var t = 0;
+      function animate() {
+
+        requestAnimationFrame( animate );
+        if ( t > 30 ) t = 0;
+        
+        for (var shipID in ships) ships[shipID].animate();
+        for (var tID in torpedoes) torpedoes[tID].animate();
+                          
+        var s = ships[shipID];
+
+        render();
+        cameraInfo.innerHTML = 'Camera Information:<ul>';
+        cameraInfo.innerHTML += '<li>x: ' + camera.position.x.toFixed(2) + '</li>';
+        cameraInfo.innerHTML += '<li>y: ' + camera.position.y.toFixed(2) + '</li>';
+        cameraInfo.innerHTML += '<li>z: ' + camera.position.z.toFixed(2) + '</li>';
+        cameraInfo.innerHTML += '</ul>';
+        
+        shipPosition.innerHTML = 'Ship Position:<ul>';
+        shipPosition.innerHTML += '<li>x: ' + s.position.x.toFixed(2) + '</li>';
+        shipPosition.innerHTML += '<li>y: ' + s.position.y.toFixed(2) + '</li>';
+        shipPosition.innerHTML += '<li>z: ' + s.position.z.toFixed(2) + '</li>';
+        shipPosition.innterHTML += '</ul>';
+        
+        shipVelocity.innerHTML = 'Ship Velocity: <ul>';
+        shipVelocity.innerHTML += '<li>x: ' + s.velocity.x.toFixed(3) + '</li>';
+        shipVelocity.innerHTML += '<li>y: ' + s.velocity.y.toFixed(3) + '</li>';
+        shipVelocity.innerHTML += '<li>z: ' + s.velocity.z.toFixed(3) + '</li>';
+        shipVelocity.innerHTML += '</ul>';
+  
+        shipAngularVelocity.innerHTML = 'Ship Angular Vel.:<ul>';
+        shipAngularVelocity.innerHTML += '<li>x: ' + s.angularVelocity.x.toFixed(4) + '</li>';
+        shipAngularVelocity.innerHTML += '<li>y: ' + s.angularVelocity.y.toFixed(4) + '</li>';
+        shipAngularVelocity.innerHTML += '<li>z: ' + s.angularVelocity.z.toFixed(4) + '</li>';
+        shipAngularVelocity.innerHTML += '</ul>';
+        
+        sphereMesh.position = s.position;
+      }
+
+      function render() {
+
+        var timer = new Date().getTime() * 0.00005;
+        var p = ships[shipID].position;
+        if (cameraLock){
+          camera.position.x = p.x + (p.x < 0 ? -10 : 10);
+          camera.position.y = p.y + (p.y < 0 ? -10: 10);
+          camera.position.z = p.z + (p.z < 0 ? -10 : 10);
+          
+          camera.lookAt({x:0,y:0,z:0});
+            
+        } else {
+          if (cameraRotate){
+            camera.position.x = p.x + Math.cos( timer ) * 10;
+            camera.position.z = p.z + Math.sin( timer ) * 10;
+          } else {
+            camera.position.x = p.x + 10;
+            camera.position.z = p.z + 10;
+          };
+          camera.position.y = p.y + 2;
+
+          camera.lookAt( p );
+
+        }
+
+        particleLight.position.x = Math.sin( timer * 4 ) * 3009;
+        particleLight.position.y = Math.cos( timer * 5 ) * 4000;
+        particleLight.position.z = Math.cos( timer * 4 ) * 3009;
+
+        renderer.render( scene, camera );      
+      }
+      
+      function quaterionFromYawPitchRoll(yaw, pitch, roll){
+        var q = new THREE.Quaternion();
+        var n1, n2, n3, n4, n5, n6, n7, n8, n9;
+        n9 = roll * 0.5;
+        n6 = Math.sin(n9);
+        n5 = Math.cos(n9);
+        n8 = pitch * 0.5;
+        n4 = Math.sin(n8);
+        n3 = Math.cos(n8);
+        n7 = yaw * 0.5;
+        n2 = Math.sin(n7);
+        n1 = Math.cos(n7);
+        q.x = ((n1 * n4) * n5) + ((n2 * n3) * n6);
+        q.y = ((n2 * n3) * n5) - ((n1 * n4) * n6);
+        q.z = ((n1 * n3) * n6) - ((n2 * n4) * n5);
+        q.w = ((n1 * n3) * n5)  + ((n2 * n4) * n6);
+        
+        return q;
+      
+      }
+              
+      function returnKey(evt) {
+        var evt  = (evt) ? evt : ((event) ? event : null);
+        switch(evt.keyCode){
+        
+          case 67: // c, camera toggle
+            // TODO: just press "c" to toggle through different camera modes
+            if (evt.shiftKey){
+              if (cameraLock){
+                cameraLock = false;
+              } else {
+                cameraLock =  true;
+              };
+            } else {
+              if (cameraRotate){
+                cameraRotate = false;
+              } else {
+                cameraRotate = true;
+              };
+            };
+            break;
+          case 84: // fire torpedoes
+            socket.emit('torpedo.fire', {shipId: shipID}, function(newTorp){
+              var t = new Ship(shipClasses.TorpedoMkI);
+              t.id = newTorp.id;
+              torpedoes[t.id] = t;
+              t.load(function(mesh){scene.add(mesh)});
+            });
+            break;
+      
+          case 32: // space bar, thruster
+            socket.emit('ship.drive', {shipId: 12345});
+                                                break;
+            
+          case 38: // up arrow, nose up
+            socket.emit('ship.thrust', {type:'noseUp', shipId: 12345});
+                                                break;
+            
+          case 40: // down arrow, nose down
+            socket.emit('ship.thrust', {type:'noseDown', shipId: 12345});
+                                                break;
+            
+          case 37: // left arrow, pivot left or roll left
+            if (evt.ctrlKey){
+                                                  socket.emit('ship.thrust', {type:'pivotLeft', shipId: 12345});
+            } else {
+                    socket.emit('ship.thrust', {type:'rollLeft', shipId: 12345});
+            };
+            break;
+            
+          case 39: // right arrow, pivot right or roll right
+            if (evt.ctrlKey){
+              socket.emit('ship.thrust', {type:'pivotRight', shipId: 12345});
+            } else {
+              socket.emit('ship.thrust', {type:'rollRight', shipId: 12345});
+            };
+            break;
+          case 82: // r ~ Reset in dev mode
+              socket.emit('ship.devReset', {shipId: 12345});
+            break;            
+          case 84: // t, torpedo
+              socket.emit('torpedo.fire', {shipId: 12345});
+            break;
+          default:
+            break;
+        }
+      }
+
+    </script>
+  </body>
+</html>
