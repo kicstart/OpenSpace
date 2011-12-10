@@ -97,7 +97,7 @@ OpenSpace.Ship.prototype = {
     this.position.x = this.position.y = this.position.z = 0;
     this.velocity.x = this.velocity.y = this.velocity.z = 0;
     this.angularVelocity.x = this.angularVelocity.y = this.angularVelocity.z = 0;
-    this.quaternion = OpenSpace.quaternionFromYawPitchRoll(0, -Math.PI/2, Math.PI/2); 
+    this.quaternion = OpenSpace.quaternionFromYawPitchRoll(0, 0, 0); 
   },
 
   getState: function() {
