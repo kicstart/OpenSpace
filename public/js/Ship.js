@@ -5,6 +5,7 @@ Ship = function(shipClass){
   this.angularVelocity = {x:0,y:0,z:0};
   this.mesh = new THREE.Mesh(); 
   this.shipClass = shipClass;
+  this.hull = this.shipClass.hull_pts;
 };
 
 Ship.prototype = {
