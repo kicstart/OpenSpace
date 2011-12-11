@@ -12,19 +12,9 @@
         overflow: hidden;
       }
       
-      #infoBar{
-        color:#fff;
-      }
-      
-      .shipInfo{
-        float:left;
-        margin-left:20px;
-      }
-      
-      #cameraInfo{
-        float:left;
-      }
     </style>
+    <link rel="stylesheet" type="text/css" href="hud.css"></link>
+
   </head>
   <body>
     <script src="js/Three.js"></script>
@@ -32,7 +22,7 @@
     <script src="js/RequestAnimationFrame.js"></script>
     <script src="js/Stats.js"></script>
     <script src="js/Ship.js"></script>  
-            
+    <script src="js/Hud.js"></script>        
     <script>
 // variables
       var shipID;
@@ -51,8 +41,7 @@
       
       var cameraRotate = true;
       var cameraLock = false;            
-      var infoBar, cameraInfo, shipPosition, shipOrientation, shipVelocity;    
-      
+      var hud = new Hud(); 
       var jLoader = new THREE.JSONLoader(true);      
 
 // functions
@@ -192,36 +181,7 @@
 
         container.appendChild( renderer.domElement );
       
-        
-        infoBar = document.createElement('div');
-        infoBar.style.position  = 'absolute';
-        infoBar.style.top = '0px';
-        infoBar.style.width = '100%';
-        infoBar.style.height = '100px';
-        infoBar.id = 'infoBar';
-
-        cameraInfo = document.createElement('div');
-        cameraInfo.id = 'cameraInfo';
-        cameraInfo.innerHTML = 'Camera Information';
-        
-        shipPosition = document.createElement('div');
-        shipPosition.className = 'shipInfo';
-        shipPosition.innerHTML = 'Ship Position';
-      
-        shipVelocity = document.createElement('div');
-        shipVelocity.className = 'shipInfo';
-        shipVelocity.innerHTML = 'Ship Velocity'; 
-        
-        shipAngularVelocity = document.createElement('div');
-        shipAngularVelocity.className = 'shipInfo';
-        shipAngularVelocity.innterHTML = 'Ship Angular Vel.';
-      
-        infoBar.appendChild(cameraInfo);
-        infoBar.appendChild(shipPosition);
-        infoBar.appendChild(shipVelocity);
-        infoBar.appendChild(shipAngularVelocity);
-        
-        container.appendChild(infoBar);
+        hud.init(container);  
       }
 
       //
@@ -238,31 +198,7 @@
         var s = ships[shipID];
 
         render();
-        cameraInfo.innerHTML = 'Camera Information:<ul>';
-        cameraInfo.innerHTML += '<li>x: ' + camera.position.x.toFixed(2) + '</li>';
-        cameraInfo.innerHTML += '<li>y: ' + camera.position.y.toFixed(2) + '</li>';
-        cameraInfo.innerHTML += '<li>z: ' + camera.position.z.toFixed(2) + '</li>';
-        cameraInfo.innerHTML += '</ul>';
-        
-        shipPosition.innerHTML = 'Ship Position:<ul>';
-        shipPosition.innerHTML += '<li>x: ' + s.position.x.toFixed(2) + '</li>';
-        shipPosition.innerHTML += '<li>y: ' + s.position.y.toFixed(2) + '</li>';
-        shipPosition.innerHTML += '<li>z: ' + s.position.z.toFixed(2) + '</li>';
-        shipPosition.innterHTML += '</ul>';
-        
-        shipVelocity.innerHTML = 'Ship Velocity: <ul>';
-        shipVelocity.innerHTML += '<li>x: ' + s.velocity.x.toFixed(3) + '</li>';
-        shipVelocity.innerHTML += '<li>y: ' + s.velocity.y.toFixed(3) + '</li>';
-        shipVelocity.innerHTML += '<li>z: ' + s.velocity.z.toFixed(3) + '</li>';
-        shipVelocity.innerHTML += '</ul>';
-  
-        shipAngularVelocity.innerHTML = 'Ship Angular Vel.:<ul>';
-        shipAngularVelocity.innerHTML += '<li>x: ' + s.angularVelocity.x.toFixed(4) + '</li>';
-        shipAngularVelocity.innerHTML += '<li>y: ' + s.angularVelocity.y.toFixed(4) + '</li>';
-        shipAngularVelocity.innerHTML += '<li>z: ' + s.angularVelocity.z.toFixed(4) + '</li>';
-        shipAngularVelocity.innerHTML += '</ul>';
-        
-        sphereMesh.position = s.position;
+        hud.animate();
       }
 
       function render() {
@@ -289,7 +225,7 @@
           camera.lookAt( p );
 
         }
-
+        sphereMesh.position = p;
         particleLight.position.x = Math.sin( timer * 4 ) * 3009;
         particleLight.position.y = Math.cos( timer * 5 ) * 4000;
         particleLight.position.z = Math.cos( timer * 4 ) * 3009;
