@@ -22,7 +22,8 @@
     <script src="js/RequestAnimationFrame.js"></script>
     <script src="js/Stats.js"></script>
     <script src="js/Ship.js"></script>  
-    <script src="js/Hud.js"></script>        
+    <script src="js/Hud.js"></script>       
+    <script src="js/CameraView.js"></script> 
     <script>
 // variables
       var shipID;
@@ -36,17 +37,15 @@
         
       var scene = new THREE.Scene();
       var camera, renderer, objects, sphereMesh;
+      var camView = new CameraViewController();
       var particleLight, pointLight;
       var station, skin;
       
-      var cameraRotate = true;
-      var cameraLock = false;            
       var hud = new Hud(); 
       var jLoader = new THREE.JSONLoader(true);      
 
 // functions
       function updatePosition(worldSignal) {
-          world = worldSignal;
           for(var i=0;i<world.ships.length;i++){
             var m = world.ships[i];
             ships[m.id].position = m.position;
@@ -88,6 +87,7 @@
             station.scale.set(0.01, 0.01, 0.01);
             station.updateMatrix();
             station.castShadow = true;
+            station.receiveShadow = true;
             if (callback !== undefined) callback();
           }, 
           'obj/'
@@ -97,6 +97,7 @@
 // listeners      
         socket = io.connect('http://'+location.host);
         socket.on('openspace.loop', function(ship_signal){
+          world = ship_signal;
           updatePosition(ship_signal);
         });
         socket.on('openspace.welcome',function(message){
@@ -104,7 +105,6 @@
           shipID = msg.ship.id;
           // Add the Ships Mesh
           world = msg.world;
-          console.log(message);
           for (var i=0;i<world.ships.length;i++){
             var s = new Ship(shipClasses.MartianDestroyer);
             s.id = world.ships[i].id;
@@ -125,7 +125,7 @@
           ships[message.shipID] = newShip;
           newShip.load(function(mesh){scene.add(mesh)});
         });
-        socket.on('openspace.new.torpedo',function(message){
+       socket.on('openspace.new.torpedo',function(message){
           var t = new Ship(shipClasses.TorpedoMkI);
           t.id = message.torpedo.id;
           torpedoes[message.torpedo.id] = t;
@@ -148,6 +148,8 @@
 
         camera = new THREE.PerspectiveCamera( 45, window.innerWidth / window.innerHeight, 1, 2000 );
         camera.position.set( 2, 2, 3 );
+        scene.add(camera);
+        
         
         // Sphere
         scene.add(sphereMesh);
@@ -159,17 +161,13 @@
        for (var sid in ships){
          ships[sid].load(function(mesh){scene.add(mesh)});
        }; 
+       
        // Add the Torpedos
        for (var tid in torpedoes){
          torpedoes[tid].load(function(mesh){scene.add(mesh)});
        };
 
-        particleLight = new THREE.Mesh( new THREE.SphereGeometry( 4, 8, 8 ), new THREE.MeshBasicMaterial( { color: 0xffffff } ) );
-        scene.add( particleLight );
-
         // Lights
-
-
         var directionalLight = new THREE.DirectionalLight(/*Math.random() * 0xffffff*/0xeeeeee );
 
         pointLight = new THREE.PointLight( 0xffffff, 10 );
@@ -202,34 +200,9 @@
       }
 
       function render() {
-
-        var timer = new Date().getTime() * 0.00005;
         var p = ships[shipID].position;
-        if (cameraLock){
-          camera.position.x = p.x + (p.x < 0 ? -10 : 10);
-          camera.position.y = p.y + (p.y < 0 ? -10: 10);
-          camera.position.z = p.z + (p.z < 0 ? -10 : 10);
-          
-          camera.lookAt({x:0,y:0,z:0});
-            
-        } else {
-          if (cameraRotate){
-            camera.position.x = p.x + Math.cos( timer ) * 10;
-            camera.position.z = p.z + Math.sin( timer ) * 10;
-          } else {
-            camera.position.x = p.x + 10;
-            camera.position.z = p.z + 10;
-          };
-          camera.position.y = p.y + 2;
-
-          camera.lookAt( p );
-
-        }
+        camView.setCamera();
         sphereMesh.position = p;
-        particleLight.position.x = Math.sin( timer * 4 ) * 3009;
-        particleLight.position.y = Math.cos( timer * 5 ) * 4000;
-        particleLight.position.z = Math.cos( timer * 4 ) * 3009;
-
         renderer.render( scene, camera );      
       }
       
@@ -258,21 +231,33 @@
         var evt  = (evt) ? evt : ((event) ? event : null);
         switch(evt.keyCode){
         
-          case 67: // c, camera toggle
-            // TODO: just press "c" to toggle through different camera modes
-            if (evt.shiftKey){
-              if (cameraLock){
-                cameraLock = false;
-              } else {
-                cameraLock =  true;
-              };
-            } else {
-              if (cameraRotate){
-                cameraRotate = false;
-              } else {
-                cameraRotate = true;
-              };
-            };
+          case 49: // 1
+            camView.setView(1);
+            break;
+          case 50: // 2
+            camView.setView(2);
+            break;
+          case 51: // 3
+            camView.setView(3);
+            break;
+          case 52: // 4
+            camView.setView(4);
+            break;
+          case 53: // 5
+            camView.setView(5);
+            break;
+          case 54: // 6
+            camView.setView(6);
+            break;
+          case 55: // 7 
+            camView.setView(7);
+            break;
+          case 56: // 8
+            break;
+          case 57: // 9
+            break;
+          case 48: // 0
+            camView.setView(0);
             break;
           case 84: // fire torpedoes
             socket.emit('torpedo.fire', {shipId: shipID}, function(newTorp){
