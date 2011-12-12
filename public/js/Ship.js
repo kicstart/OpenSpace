@@ -24,6 +24,8 @@ Ship.prototype = {
         scope.mesh.scale.set(0.01,0.01,0.01);
         scope.mesh.quaternion = scope.quaternionFromYawPitchRoll(0, 0, 0);
         scope.mesh.updateMatrix();
+        scope.mesh.castShadow = true;
+        scope.mesh.reveiveShadow = true;
         if (callback !== undefined) callback(scope.mesh);
     };
     loader.load(this.shipClass.mesh_url,handler,'obj/'); 
@@ -60,6 +62,34 @@ Ship.prototype = {
     q.z = ((n1 * n3) * n6) - ((n2 * n4) * n5);
     q.w = ((n1 * n3) * n5)  + ((n2 * n4) * n6);
     return q;
+  },
+
+  getForwardVector: function(){
+    var m = this.mesh.matrix;
+    return new THREE.Vector3(m.n13,m.n23,m.n33);
+  },
+
+  getBackwardVector: function(){
+    var b = this.getForwardVector();
+    return b.multiplyScalar(-1);
+  },
+
+  getUpVector: function(){
+    return this.mesh.matrix.getColumnY();
+  },
+
+  getDownVector: function(){
+    var up = this.getUpVector();
+    return up.multiplyScalar(-1);
+  },
+
+  getLeftVector: function(){
+    var right = this.getRightVector();
+    return right.multiplyScalar(-1);
+  },
+
+  getRightVector: function(){
+    return this.mesh.matrix.getColumnX();
   },
 };
 

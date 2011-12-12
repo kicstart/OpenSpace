@@ -8,6 +8,25 @@
   font-size:100%;
 }
 
+.hudBreak{
+  clear:both;
+}
+
+.hudBoxBottom{
+  position:absolute;
+  bottom:0px;
+  max-width:200px;
+  color:rgba(255, 255, 255, 1);
+  margin:10px;
+  background-color:rgba(254, 57, 18, 0.4);
+  border-style:solid;
+  border-top-width:6px;
+  border-left-width:1px;
+  border-right-width:1px;
+  border-bottom-width:1px;
+  border-color:rgba(254, 57, 18, 0.6);
+}
+
 .hudBox{
   float:left;
   color:rgba(255, 255, 255, 1);
@@ -25,7 +44,7 @@
   clear:both;
 }
 
-.hudBox h2{
+#hud h2{
   margin-top:10px;
   margin-bottom:10px;
   margin-left:15px;

@@ -1,21 +1,59 @@
 Hud = function(){
   this.top = document.createElement('div');
   this.SHP = new SHP();
+  this.CAM = new CAM();
 };
 
 Hud.prototype = {
   constructor: Hud,
   init: function(parentNode){
-    this.SHP.init();   
+    this.SHP.init();  
+    this.CAM.init(); 
     this.top.id = 'hud';
     this.top.appendChild(this.SHP.SHP);
+    this.top.appendChild(this.CAM.CAM);
 
     parentNode.appendChild(this.top); 
   },
   animate: function(){
     this.SHP.animate();
+    this.CAM.animate();
   },
 };
+
+
+CAM = function(){
+  this.CAM = document.createElement('div');
+  this.name = document.createElement('div');
+  this.zoom = document.createElement('div');
+};
+
+CAM.prototype = {
+  constructor: CAM,
+
+  init: function(){
+    this.CAM.className = 'hudBoxBottom';
+    this.CAM.id = 'hudCAM';
+    this.CAM.innerHTML = '<h2>CAM</h2>';
+
+    this.name.className = 'hudWidget';
+    this.name.innerHTML = '<h3>view</h3>';
+    this.CAM.appendChild(this.name);
+
+    this.zoom.className = 'hudWidget';
+    this.zoom.innerHTML = '<h3>zoom</h3>';
+    this.CAM.appendChild(this.zoom);
+  },
+
+  animate: function(){
+    this.name.innerHTML = '<h3>view</h3>';
+    this.name.innerHTML += '<span class="camName">' + camView.currentState + '</span>';
+
+    this.zoom.innerHTML = '<h3>zoom</h3>';
+    this.zoom.innerHTML += '<span class="camZoom">' + camView.zoom + '</span>';
+  },
+};
+
 
 SHP = function(){
   this.SHP = document.createElement('div');
