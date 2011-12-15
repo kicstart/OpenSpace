@@ -150,7 +150,7 @@ io.sockets.on('connection', function (socket) {
   });
 
   socket.on('torpedo.drive', function(data) {
-    torpedo = _.find(ship.torpedoes, function(torpedo) { torpedo.id = data.torpedoId });
+    torpedo = _.find(ship.torpedoes, function(torpedo) { return torpedo.id == data.torpedoId });
     if (torpedo) {
       torpedo.drive(0.1);
     }
