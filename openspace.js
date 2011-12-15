@@ -149,9 +149,26 @@ io.sockets.on('connection', function (socket) {
     socket.broadcast.emit('openspace.new.torpedo', { msg: 'Torpedo detected', ship: ship.getState(), torpedo: torpedo.getState()}); // the everyone (but us) that we attack!
   });
 
+  socket.on('torpedo.drive', function(data) {
+    torpedo = _.find(ship.torpedoes, function(torpedo) { torpedo.id = data.torpedoId });
+    if (torpedo) {
+      torpedo.drive(0.1);
+    }
+  });
+
+  socket.on('torpedo.detonate', function(data) {
+    detonated = _.find(ship.torpedoes, function(torpedo) { return torpedo.id == data.torpedoId });
+    console.log(' [x] Detonated torpedoId: ', detonated.id);
+    if (detonated) {
+      ship.torpedoes = _.reject(ship.torpedoes, function(torpedo) { return torpedo.id == detonated.id});
+      io.sockets.emit('openspace.detonate.torpedo', { msg: 'Torpedo detonated', torpedo: detonated.getState()});
+      detonated = null;
+    }
+  });
+
   socket.on('ship.destruct', function(message, fn) {
     socket.broadcast.emit('openspace.destruct.ship', {msg: 'Ship destruction detected', type: 'self', ship: ship.getState()});
-    ships = _.filter(ships, function(s) { return s.id != ship.id});
+    ships = _.reject(ships, function(s) { return s.id == ship.id});
     ship = null;
     session.shipId = null;
     session.save();

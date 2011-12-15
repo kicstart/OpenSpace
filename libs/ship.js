@@ -58,7 +58,7 @@ OpenSpace.Ship.prototype = {
   },
 
   drive: function(impulse) {
-    impulse = impulse || 0.005;
+    impulse = impulse || 0.001;
 
     this.matrix.setPosition(this.position);
     this.matrix.scale = this.scale;

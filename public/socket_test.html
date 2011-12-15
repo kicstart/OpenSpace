@@ -60,9 +60,14 @@
           $('#message').append('<div>' + data.msg + ' type: ' + data.type + ' ' + data.ship.id + '</div>'); 
         });
 
+        socket.on('openspace.detonate.torpedo', function(data) {
+          $('#message').append('<div>' + data.msg + ' id:' + data.torpedo.id + '</div>');
+        });
+
         socket.on('openspace.loop', function(world) {
           updateWorld(world);
         });
+
 
         $('#destruct').click(function() {
           socket.emit('ship.destruct', {shipId: 12345});
@@ -100,6 +105,10 @@
             $('#message').append('<div>I fired a torpedo ' + torpedo.id + '</div>');
           });
         })
+
+        $('#boom').click(function() {
+          socket.emit('torpedo.detonate', {torpedoId: $('input[name=torpedoId]').val() * 1});
+        });
 
 
 
@@ -142,6 +151,11 @@
 
     <div>
       <button id="torp">Fire!!</button>
+    </div>
+
+    <div>
+      <input type="text" name="torpedoId">
+      <button id="boom">boom</button>
     </div>
 
 
