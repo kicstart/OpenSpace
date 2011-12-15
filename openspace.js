@@ -26,6 +26,21 @@ app.configure(function() {
 
 var ships = new Array();
 
+// get all the objects in the world
+function objects() {
+  var objs = Array();
+
+  _.each(ships, function(ship) {
+    objs.push(ship);
+    _.each(ship.torpedoes, function(torpedo) {
+      objs.push(torpedo);
+    });
+  });
+
+  return objs;
+
+};
+
 var game = {
   gameTime: 33,
   // main game loop
@@ -160,6 +175,21 @@ io.sockets.on('connection', function (socket) {
     detonated = _.find(ship.torpedoes, function(torpedo) { return torpedo.id == data.torpedoId });
     console.log(' [x] Detonated torpedoId: ', detonated.id);
     if (detonated) {
+      // calc damage radius
+      var pos = detonated.position;
+      var dVector = new THREE.Vector3(pos.x, pos.y, pos.z);
+      console.log(dVector);
+      var objs = objects();
+      _.each(objs, function(obj) {
+        if (obj.distanceTo(dVector) <= 20) { // TODO: constant this
+          obj.damage(1500);  
+
+          // TODO: We need to remove ships that have been destroyed, ideally in an abstracted method
+        }
+      });
+      
+
+      // remove the torpedo from the world and notify
       ship.torpedoes = _.reject(ship.torpedoes, function(torpedo) { return torpedo.id == detonated.id});
       io.sockets.emit('openspace.detonate.torpedo', { msg: 'Torpedo detonated', torpedo: detonated.getState()});
       detonated = null;
