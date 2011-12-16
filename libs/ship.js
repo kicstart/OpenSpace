@@ -24,6 +24,7 @@ OpenSpace.quaternionFromYawPitchRoll = function(yaw, pitch, roll){
 
 OpenSpace.Ship = function(type,x,y,z) {
   this.id = 0;
+  this.ownerId = 0;
   this.type = type || 'ship';
 
   this.hull = 1500;
@@ -103,6 +104,12 @@ OpenSpace.Ship.prototype = {
         this.angularVelocity.x -= 0.0001;
         break;
     }
+  },
+
+  destroyTorpedo: function (torpedo) {
+    if (this.type != 'ship') return;
+
+    this.torpedos = _.reject(this.torpedos, function(t) { return t.id == torpedo.id });
   },
 
   reset: function() {

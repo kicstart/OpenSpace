@@ -65,6 +65,10 @@
           $('#message').append('<div>' + data.msg + ' id:' + data.torpedo.id + '</div>');
         });
 
+        socket.on('openspace.destroy.ship', function(data) {
+          $('#message').append('<div>' + data.msg + ' ' + data.ship.id + '</div>');
+        });
+
         socket.on('openspace.loop', function(world) {
           updateWorld(world);
         });
