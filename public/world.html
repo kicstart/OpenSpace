@@ -26,7 +26,8 @@
     <script src="js/CameraView.js"></script> 
     <script>
 // variables
-      var shipID;
+      var shipID, torpID;
+      var myTorpedoes = {};
       var ships = {};
       var torpedoes = {};
       var world;
@@ -95,48 +96,52 @@
        };
 
 // listeners      
-        socket = io.connect('http://'+location.host);
-        socket.on('openspace.loop', function(ship_signal){
+       socket = io.connect('http://'+location.host);
+       socket.on('openspace.loop', function(ship_signal){
           world = ship_signal;
           updatePosition(ship_signal);
-        });
-        socket.on('openspace.welcome',function(message){
-          msg = message;
-          shipID = msg.ship.id;
-          // Add the Ships Mesh
-          world = msg.world;
-          for (var i=0;i<world.ships.length;i++){
-            var s = new Ship(shipClasses.MartianDestroyer);
-            s.id = world.ships[i].id;
-            ships[s.id] = s;
-          };
-          // Add the Torpedo Meshs
-          for (var i=0; i<world.torpedoes.length; i++){
-            var t = new Ship(shipClasses.TorpedoMkI);
-            t.id = world.torpedoes[i].id;
-            torpedoes[t.id] = t;
-          };
-          init();
-          animate();
-        });
-        socket.on('openspace.newShip',function(message){
-          var newShip = new Ship(shipClasses.MartianDestroyer);
-          newShip.id = message.shipID;
-          ships[message.shipID] = newShip;
-          newShip.load(function(mesh){scene.add(mesh)});
-        });
+       });
+       socket.on('openspace.welcome',function(message){
+         msg = message;
+         shipID = msg.ship.id;
+         // Add the Ships Mesh
+         world = msg.world;
+         for (var i=0;i<world.ships.length;i++){
+           var s = new Ship(shipClasses.MartianDestroyer);
+           s.id = world.ships[i].id;
+           ships[s.id] = s;
+         };
+         // Add the Torpedo Meshs
+         for (var i=0; i<world.torpedoes.length; i++){
+           var t = new Ship(shipClasses.TorpedoMkI);
+           t.id = world.torpedoes[i].id;
+           torpedoes[t.id] = t;
+         };
+         init();
+         animate();
+       });
+       socket.on('openspace.newShip',function(message){
+         var newShip = new Ship(shipClasses.MartianDestroyer);
+         newShip.id = message.shipID;
+         ships[message.shipID] = newShip;
+         newShip.load(function(mesh){scene.add(mesh)});
+       });
        socket.on('openspace.new.torpedo',function(message){
-          var t = new Ship(shipClasses.TorpedoMkI);
-          t.id = message.torpedo.id;
-          torpedoes[message.torpedo.id] = t;
-          t.load(function(mesh){scene.add(mesh)});
-        });
+         var t = new Ship(shipClasses.TorpedoMkI);
+         t.id = message.torpedo.id;
+         torpedoes[message.torpedo.id] = t;
+         t.load(function(mesh){scene.add(mesh)});
+       });
+       socket.on('openspace.detonate.torpedo',function(message){
+          var t = message.torpedo;
+          // todo: something
+       });
 
 // callback chain
-        loadWorld(function(){
-          loadBerth(function(){
-            })
-          });
+       loadWorld(function(){
+         loadBerth(function(){
+         })
+       });
       
 // init
 // animate
@@ -167,20 +172,20 @@
          torpedoes[tid].load(function(mesh){scene.add(mesh)});
        };
 
-        // Lights
-        var directionalLight = new THREE.DirectionalLight(/*Math.random() * 0xffffff*/0xeeeeee );
+       // Lights
+       var directionalLight = new THREE.DirectionalLight(/*Math.random() * 0xffffff*/0xeeeeee );
 
-        pointLight = new THREE.PointLight( 0xffffff, 10 );
-        pointLight.position.x = -100000;
-        scene.add( pointLight );
+       pointLight = new THREE.PointLight( 0xffffff, 10 );
+       pointLight.position.x = -100000;
+       scene.add( pointLight );
 
-        renderer = new THREE.WebGLRenderer();
-        renderer.setSize( window.innerWidth, window.innerHeight );
+       renderer = new THREE.WebGLRenderer();
+       renderer.setSize( window.innerWidth, window.innerHeight );
 
-        container.appendChild( renderer.domElement );
+       container.appendChild( renderer.domElement );
       
-        hud.init(container);  
-      }
+       hud.init(container);  
+     }
 
       //
 
@@ -193,8 +198,6 @@
         for (var shipID in ships) ships[shipID].animate();
         for (var tID in torpedoes) torpedoes[tID].animate();
                           
-        var s = ships[shipID];
-
         render();
         hud.animate();
       }
@@ -226,7 +229,12 @@
         return q;
       
       }
-              
+          
+      function detonate(e){
+        socket.emit('torpedo.detonate', {torpedoId: e});
+        alert('detonation sent');
+      }
+    
       function returnKey(evt) {
         var evt  = (evt) ? evt : ((event) ? event : null);
         switch(evt.keyCode){
@@ -265,41 +273,42 @@
               t.id = newTorp.id;
               torpedoes[t.id] = t;
               t.load(function(mesh){scene.add(mesh)});
+              myTorpedoes[t.id] = {target:hud.WPN.targetObject};
             });
             break;
       
           case 32: // space bar, thruster
-            socket.emit('ship.drive', {shipId: 12345});
-                                                break;
+            socket.emit('ship.drive', {shipId: shipID});
+            break;
             
           case 38: // up arrow, nose up
-            socket.emit('ship.thrust', {type:'noseUp', shipId: 12345});
-                                                break;
+            socket.emit('ship.thrust', {type:'noseUp', shipId: shipID});
+            break;
             
           case 40: // down arrow, nose down
-            socket.emit('ship.thrust', {type:'noseDown', shipId: 12345});
-                                                break;
+            socket.emit('ship.thrust', {type:'noseDown', shipId: shipID});
+            break;
             
           case 37: // left arrow, pivot left or roll left
             if (evt.ctrlKey){
-                                                  socket.emit('ship.thrust', {type:'pivotLeft', shipId: 12345});
+                                                  socket.emit('ship.thrust', {type:'pivotLeft', shipId: shipID});
             } else {
-                    socket.emit('ship.thrust', {type:'rollLeft', shipId: 12345});
+                    socket.emit('ship.thrust', {type:'rollLeft', shipId: shipID});
             };
             break;
             
           case 39: // right arrow, pivot right or roll right
             if (evt.ctrlKey){
-              socket.emit('ship.thrust', {type:'pivotRight', shipId: 12345});
+              socket.emit('ship.thrust', {type:'pivotRight', shipId: shipID});
             } else {
-              socket.emit('ship.thrust', {type:'rollRight', shipId: 12345});
+              socket.emit('ship.thrust', {type:'rollRight', shipId: shipID});
             };
             break;
           case 82: // r ~ Reset in dev mode
-              socket.emit('ship.devReset', {shipId: 12345});
+              socket.emit('ship.devReset', {shipId:shipID});
             break;            
-          case 84: // t, torpedo
-              socket.emit('torpedo.fire', {shipId: 12345});
+          case 68: // d, detonate
+              socket.emit('torpedo.detonate', {torpedoId: torpID});
             break;
           default:
             break;

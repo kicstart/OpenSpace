@@ -47,6 +47,16 @@ CameraViewController.prototype = {
     var lookAtPt = camera.position.clone();
     vec.setLength(100);
     lookAtPt.add(vec, lookAtPt);
+    //attempt 1
+    //camera.rotation.setRotationFromMatrix(ships[shipID].mesh.matrix);
+
+    //attempt 2 - doesn't seem to look anywhere, stright ahead
+    //camera.matrix.lookAt(camera.position, lookAtPt, ships[shipID].mesh.up);
+    
+    //attempt 3 - same effect as 1
+    //camera.matrix = ships[shipID].mesh.matrix.clone();
+    
+    //mvp
     camera.lookAt(lookAtPt);
     vec.setLength(this.zoom * this.zoomScale);
     //camera.position.x += vec.x;

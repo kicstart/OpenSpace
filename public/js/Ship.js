@@ -1,11 +1,12 @@
 Ship = function(shipClass){
   this.id = -1;
-  this.position = {x:0,y:0,z:0};
+  this.position = new THREE.Vector3(0,0,0);
   this.velocity = {x:0,y:0,z:0};
   this.angularVelocity = {x:0,y:0,z:0};
   this.mesh = new THREE.Mesh(); 
   this.shipClass = shipClass;
   this.hull = this.shipClass.hull_pts;
+  this.type = shipClass.type;
 };
 
 Ship.prototype = {
@@ -24,8 +25,6 @@ Ship.prototype = {
         scope.mesh.scale.set(0.01,0.01,0.01);
         scope.mesh.quaternion = scope.quaternionFromYawPitchRoll(0, 0, 0);
         scope.mesh.updateMatrix();
-        scope.mesh.castShadow = true;
-        scope.mesh.reveiveShadow = true;
         if (callback !== undefined) callback(scope.mesh);
     };
     loader.load(this.shipClass.mesh_url,handler,'obj/'); 
@@ -43,8 +42,24 @@ Ship.prototype = {
     this.mesh.quaternion.multiply(
       this.mesh.quaternion,
       this.quaternionFromYawPitchRoll(yaw, pitch, roll));
+    this.torpedoCalculations();
   },
-      
+
+  torpedoCalculations: function(){
+    var BLASTRADIUS = 20;
+    for (tid in myTorpedoes){
+      var trp = torpedoes[tid];
+      var trg = myTorpedoes[tid].target;
+      if(trg != null && trp.distanceTo(trg) <= BLASTRADIUS){
+        socket.emit('torpedo.detonate', {torpedoId: tid});
+      };
+    };
+  },
+     
+  distanceTo: function(target){
+    return this.position.distanceTo(target.position); 
+  }, 
+
   quaternionFromYawPitchRoll: function(yaw, pitch, roll){
     var q = new THREE.Quaternion();
     var n1, n2, n3, n4, n5, n6, n7, n8, n9;
@@ -94,18 +109,19 @@ Ship.prototype = {
 };
 
 
-shipClass = function(name, mesh_url, hull_pts, max_angulars){
+shipClass = function(name, mesh_url, hull_pts, max_angulars, type){
   this.name = name;
   this.mesh_url = mesh_url;
   this.hull_pts = hull_pts !== undefined ? hull_pts : 100;
   this.max_angulars = max_angulars !== undefined ? max_angulars : {x:0.3, y:0.3, z:0.3};
+  this.type = type;
 };
 
 
 shipClasses = {
-  MartianBattleCruiser: new shipClass('MartianBattleCruiser', 'obj/MartianBC.js', 1500, {x:0.2, y:0.2, z:0.2}),
+  MartianBattleCruiser: new shipClass('MartianBattleCruiser', 'obj/MartianBC.js', 1500, {x:0.2, y:0.2, z:0.2}, 'ship'),
 
-  TorpedoMkI: new shipClass('TorpedoMkI', 'obj/Torpedo.js', 1, {x:1,y:1,z:1}),
+  TorpedoMkI: new shipClass('TorpedoMkI', 'obj/Torpedo.js', 1, {x:1,y:1,z:1}, 'torpedo'),
 
-  MartianDestroyer: new shipClass('MartianDestroyer', 'obj/MartianDestroyer.js', 800, {x:0.4, y:0.4, z:0.4}),
+  MartianDestroyer: new shipClass('MartianDestroyer', 'obj/MartianDestroyer.js', 800, {x:0.4, y:0.4, z:0.4}, 'ship'),
 };
