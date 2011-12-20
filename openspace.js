@@ -24,9 +24,35 @@ app.configure(function() {
   app.use(express.static(__dirname + '/public'));
 });
 
-var ships = new Array();
 
 var game = {
+  objects: new Array(),
+
+  findObjectById: function(id) {
+    return _.find(this.objects, function(object) { return object.id == id });
+  },
+
+  addObject: function(obj) {
+    this.objects.push(obj); // push to the world list
+
+    if (obj.type == 'torpedo') { // push to the ship list if torpedo
+      var ship = this.findObjectById(obj.ownerId);
+      ship.torpedoes.push(obj);
+    }
+  },
+
+  destroyObject: function(obj) {
+    // remove the obj from the world list
+    var newObjects = _.reject(this.objects, function(o) { return o.id == obj.id; });
+  
+    if (obj.type == 'torpedo') { // remove from the ships torpedo list
+      var ship = this.findObjectById(obj.ownerId);
+      ship.destroyTorpedo(obj);
+    }
+    this.objects = newObjects;
+
+  },
+
   gameTime: 33,
   // main game loop
   //
@@ -43,14 +69,13 @@ var game = {
     // create an array of all the objects
     var shipStates = [];
     var torpStates = [];
-    _.each(ships, function(ship) {
-      ship.animate();
-      shipStates.push(ship.getState());
-
-      _.each(ship.torpedoes, function(torpedo) {
-        torpedo.animate();
-        torpStates.push(torpedo.getState());  
-      })
+    _.each(this.objects, function(object) {
+      object.animate();
+      if (object.type == 'ship') {
+        shipStates.push(object.getState());
+      } else {
+        torpStates.push(object.getState());  
+      }
     });
     return {ships: shipStates, torpedoes: torpStates};
   }
@@ -116,11 +141,11 @@ io.sockets.on('connection', function (socket) {
 
     session.shipId = ship.id;
     session.save();
-    ships.push(ship);
+    game.addObject(ship);
     newShip = true; // so we can tell the world about us
   } else {
     // otherwise find the ship in the ships array
-    ship = _.find(ships, function(ship) { return ship.id == session.shipId});
+    ship = game.findObjectById(session.shipId);
   }
 
   console.log(' [*] Client connection, sid: ' + session.id + ' shipId: ' + session.shipId)
@@ -142,16 +167,49 @@ io.sockets.on('connection', function (socket) {
     torpedo.setState(ship.getState());
     torpedo.ownerId = ship.id; // set a reference to the owning ship
     torpedo.drive(0.1);
-    ship.torpedoes.push(torpedo);
+    game.addObject(torpedo);
     if (_.isFunction(fn)) {
       fn({status: 'success', msg: 'Torpedo fired', id: torpedo.id});
     };
     socket.broadcast.emit('openspace.new.torpedo', { msg: 'Torpedo detected', ship: ship.getState(), torpedo: torpedo.getState()}); // the everyone (but us) that we attack!
   });
 
+  socket.on('torpedo.drive', function(data) {
+    torpedo = _.find(ship.torpedoes, function(torpedo) { return torpedo.id == data.torpedoId });
+    if (torpedo) {
+      torpedo.drive(0.1);
+    }
+  });
+
+  socket.on('torpedo.detonate', function(data) {
+    detonated = _.find(ship.torpedoes, function(torpedo) { return torpedo.id == data.torpedoId });
+    console.log(' [x] Detonated torpedoId: ', detonated.id);
+    if (detonated) {
+      game.destroyObject(detonated);
+      // calc damage radius
+      var pos = detonated.position;
+      var dVector = new THREE.Vector3(pos.x, pos.y, pos.z);
+      console.log(dVector);
+      _.each(game.objects, function(obj) {
+        if (obj.distanceTo(dVector) <= 20) { // TODO: constant this
+          obj.damage(1500);  
+
+          // TODO: We need to remove ships that have been destroyed, ideally in an abstracted method
+          game.destroyObject(obj);
+          if (obj.type == 'ship') {
+            io.sockets.emit('openspace.destroy.ship', { msg: 'Ship destroyed', ship: obj.getState()})
+          }
+        }
+      });
+
+      // remove the torpedo from the world and notify
+      io.sockets.emit('openspace.detonate.torpedo', { msg: 'Torpedo detonated', torpedo: detonated.getState()});
+      detonated = null;
+    }
+  });
+
   socket.on('ship.destruct', function(message, fn) {
-    socket.broadcast.emit('openspace.destruct.ship', {msg: 'Ship destruction detected', type: 'self', ship: ship.getState()});
-    ships = _.filter(ships, function(s) { return s.id != ship.id});
+    game.destroyObject(ship);
     ship = null;
     session.shipId = null;
     session.save();

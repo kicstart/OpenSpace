@@ -13,6 +13,7 @@
       function getShipStateString(ship) {
             return ship.type + ' ' + ship.id 
             + ' ownerId: ' + ship.ownerId
+            + ' hull: ' + ship.hull
             + ' pos.x: ' + ship.position.x
             + ' pos.y: ' + ship.position.y
             + ' pos.z: ' + ship.position.z
@@ -60,9 +61,18 @@
           $('#message').append('<div>' + data.msg + ' type: ' + data.type + ' ' + data.ship.id + '</div>'); 
         });
 
+        socket.on('openspace.detonate.torpedo', function(data) {
+          $('#message').append('<div>' + data.msg + ' id:' + data.torpedo.id + '</div>');
+        });
+
+        socket.on('openspace.destroy.ship', function(data) {
+          $('#message').append('<div>' + data.msg + ' ' + data.ship.id + '</div>');
+        });
+
         socket.on('openspace.loop', function(world) {
           updateWorld(world);
         });
+
 
         $('#destruct').click(function() {
           socket.emit('ship.destruct', {shipId: 12345});
@@ -101,6 +111,13 @@
           });
         })
 
+        $('#boom').click(function() {
+          socket.emit('torpedo.detonate', {torpedoId: $('input[name=boomTorpedo]').val() * 1});
+        });
+
+        $('#driveTorpedo').click(function() {
+          socket.emit('torpedo.drive', {torpedoId: $('input[name=driveTorpedo]').val() * 1});
+        });
 
 
       });
@@ -142,6 +159,17 @@
 
     <div>
       <button id="torp">Fire!!</button>
+    </div>
+
+
+    <div>
+      <input type="text" name="driveTorpedo">
+      <button id="driveTorpedo">drive torp</button>
+    </div>
+
+    <div>
+      <input type="text" name="boomTorpedo">
+      <button id="boom">boom</button>
     </div>
 
 

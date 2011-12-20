@@ -24,7 +24,10 @@ OpenSpace.quaternionFromYawPitchRoll = function(yaw, pitch, roll){
 
 OpenSpace.Ship = function(type,x,y,z) {
   this.id = 0;
-  this.type = type || 'ship'
+  this.ownerId = 0;
+  this.type = type || 'ship';
+
+  this.hull = 1500;
 
   this.position   = {};
   this.position.x = x || 0;
@@ -58,7 +61,7 @@ OpenSpace.Ship.prototype = {
   },
 
   drive: function(impulse) {
-    impulse = impulse || 0.005;
+    impulse = impulse || 0.001;
 
     this.matrix.setPosition(this.position);
     this.matrix.scale = this.scale;
@@ -68,6 +71,16 @@ OpenSpace.Ship.prototype = {
     this.velocity.x +=  direction.x;
     this.velocity.y +=  direction.y;
     this.velocity.z +=  direction.z;
+  },
+
+  distanceTo: function(v) {
+    var pos = this.position;
+    var posVector = new THREE.Vector3(pos.x, pos.y, pos.z);
+    return posVector.distanceTo(v);
+  },
+
+  damage: function(d) {
+    this.hull -= d;
   },
 
   thrust: function(type) {
@@ -93,6 +106,12 @@ OpenSpace.Ship.prototype = {
     }
   },
 
+  destroyTorpedo: function (torpedo) {
+    if (this.type != 'ship') return;
+
+    this.torpedos = _.reject(this.torpedos, function(t) { return t.id == torpedo.id });
+  },
+
   reset: function() {
     this.position.x = this.position.y = this.position.z = 0;
     this.velocity.x = this.velocity.y = this.velocity.z = 0;
@@ -105,6 +124,7 @@ OpenSpace.Ship.prototype = {
       id              : this.id,
       ownerId         : this.ownerId,
       type            : this.type,
+      hull            : this.hull,
       position        : this.position,
       velocity        : this.velocity,
       angularVelocity : this.angularVelocity,
@@ -120,6 +140,7 @@ OpenSpace.Ship.prototype = {
   // useful for intiliziting the position of a torpedo
   setState: function(state) {
     this.position         = _.clone(state.position);
+    this.hull             = state.hull;
     this.velocity         = _.clone(state.velocity);
     this.angularVelocity  = _.clone(state.angularVelocity);
 
