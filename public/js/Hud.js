@@ -1,7 +1,13 @@
 Hud = function(){
   this.top = document.createElement('div');
+  this.left = document.createElement('div');
+  this.right = document.createElement('div');
+  this.bottom = document.createElement('div');
+  this.upper = document.createElement('div');
   this.SHP = new SHP();
   this.CAM = new CAM();
+  this.RDR = new RDR();
+  this.WPN = new WPN();
 };
 
 Hud.prototype = {
@@ -9,18 +15,123 @@ Hud.prototype = {
   init: function(parentNode){
     this.SHP.init();  
     this.CAM.init(); 
+    this.RDR.init();
+    this.WPN.init();
     this.top.id = 'hud';
-    this.top.appendChild(this.SHP.SHP);
-    this.top.appendChild(this.CAM.CAM);
+    this.left.id = 'hudLeft';
+    this.right.id = 'hudRight';
+    this.bottom.id = 'hudBottom';
+    this.upper.id = 'hudUpper';
+    this.top.appendChild(this.left);
+    this.top.appendChild(this.right);
+    this.top.appendChild(this.upper);
+    this.top.appendChild(this.bottom);
+    this.left.appendChild(this.SHP.SHP);
+    var b1 = document.createElement('div');
+    b1.className = 'hudBreak';
+    this.left.appendChild(b1);
+    this.left.appendChild(this.RDR.RDR);
+    this.bottom.appendChild(this.CAM.CAM);
+    this.right.appendChild(this.WPN.WPN);
 
     parentNode.appendChild(this.top); 
   },
   animate: function(){
     this.SHP.animate();
     this.CAM.animate();
+    this.RDR.animate();
+    this.WPN.animate();
   },
 };
 
+WPN = function(){
+  this.WPN = document.createElement('div');
+  this.targetObject = null;
+  this.target = document.createElement('div');
+  this.myTorps = document.createElement('div');
+};
+
+WPN.prototype = {
+  constructor: WPN,
+
+  init: function(){
+    this.WPN.className = "hudBoxRight";
+    this.WPN.id = 'hudWPN';
+    this.WPN.innerHTML = '<h2>WPN</h2>';
+
+    this.target.className = 'hudWidget';
+    this.target.innerHTML = '<h3>wpns trgt</h3>';
+    this.WPN.appendChild(this.target);
+
+    this.myTorps.className = 'hudWidget';
+    this.myTorps.innerHTML = '<h3>trpds</h3>';
+    this.WPN.appendChild(this.myTorps);
+  },
+
+  animate: function(){
+    // target
+    // torpedoes 
+    this.myTorps.innerHTML = '<h3>trpds</h3><ul>';
+    for (tid in myTorpedoes) {
+      this.myTorps.innerHTML += '<li>' + tid + ' <b><a href="#" onClick="detonate('+ tid +')">[!]</a></b></li>';
+    };
+  },
+};
+
+RDR = function(){
+  this.RDR = document.createElement('div');
+  this.ships = document.createElement('div');
+  this.torpedoList = document.createElement('div');
+};
+
+RDR.prototype = {
+  constructor: RDR,
+
+  init: function() {
+    this.RDR.className = "hudBox";
+    this.RDR.id = 'hudRDR';
+    this.RDR.innerHTML = '<h2>RDR</h2>';
+
+    this.ships.className = 'hudWidget';
+    this.ships.innerHTML  = '<h3>ships</h3>';
+    this.RDR.appendChild(this.ships);
+    
+    var b1 = document.createElement('div');
+    b1.className = 'hudBreak';
+    this.RDR.appendChild(b1);
+
+    this.torpedoList.className = 'hudWidget';
+    this.torpedoList.innerHTML = '<h3>trpds</h3>';
+    this.RDR.appendChild(this.torpedoList);
+  },
+
+  animate: function() {
+    this.ships.innerHTML = '<h3>ships</h3><ul>';
+    // ship loop
+    for (sid in ships){
+      if(sid == shipID) continue;
+      var p = ships[sid].position;
+      var sHTML = '<li>' + sid + ' ' + p.x.toFixed(0) + ' ';
+      sHTML += p.y.toFixed(0) + ' ' + p.z.toFixed(0) + '</li>';
+      this.ships.innerHTML += sHTML;
+    };
+    this.ships.innerHTML += '</ul>';
+
+    this.torpedoList.innerHTML = '<h3>trpds</h3><ul>';
+    // torp loop
+    for (tid in torpedoes){
+      if (myTorpedoes.hasOwnProperty(tid)){  // not in list?
+      
+      } else {
+        var p = torpedoes[tid].position;
+        var tHTML = '<li>' + tid + ' ' + p.x.toFixed(0) + ' ';
+        tHTML += p.y.toFixed(0) + ' ' + p.z.toFixed(0) + '</li>';
+        this.torpedoList.innerHTML += tHTML;
+      }
+    };
+    this.torpedoList.innerHTML += '</ul>';
+  },
+};
 
 CAM = function(){
   this.CAM = document.createElement('div');
