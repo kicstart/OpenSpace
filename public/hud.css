@@ -4,7 +4,7 @@
   left:0;
   width:100%;
   height:100%;
-  font-family: monospace;
+  font-family: Arial;
   font-size:100%;
 }
 
@@ -93,6 +93,7 @@
   border-right-width:0px;
   border-bottom-width:2px;
   border-color:rgba(254, 57, 18, 0.6);
+  font-size:1.4em;
 }
 
 .hudWidget{
@@ -105,10 +106,12 @@
   border-width:1px;
   border-color:rgba(254,57,18,0.33);
   position:relative;
+  font-size:0.8em;
 }
 
 .hudWidget h3{
-  line-height: 5px;
+  line-height: 8px;
+  font-size:1.3em;
   margin-top: 0px;
   margin-bottom: 0px;
   padding-top: 0px;
@@ -123,20 +126,22 @@
 
 .hudWidget li{
   list-style: none; 
+  font-size:0.8em;:
+
 }
 
 .big{
   float:right;
-  font-size:3em;
+  font-size:2.5em;
   font-weight:bold;
-  line-height:1.7em;
+  line-height:1.41em;
 }
 
 .waterMark{
   position:absolute;
   left:15px;
-  top:5px;
-  font-size:7em;
+  top:20px;
+  font-size:5em;
   font-weight:bold;
   color:rgba(255, 255, 255, 0.34);
 }

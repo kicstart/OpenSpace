@@ -60,18 +60,18 @@ WPN.prototype = {
     this.WPN.innerHTML = '<h2>WPN</h2>';
 
     this.target.className = 'hudWidget';
-    this.target.innerHTML = '<h3>weapons target</h3>';
+    this.target.innerHTML = '<h3>wpns trgt</h3>';
     this.WPN.appendChild(this.target);
 
     this.myTorps.className = 'hudWidget';
-    this.myTorps.innerHTML = '<h3>torpedoes</h3>';
+    this.myTorps.innerHTML = '<h3>trpds</h3>';
     this.WPN.appendChild(this.myTorps);
   },
 
   animate: function(){
     // target
     // torpedoes 
-    this.myTorps.innerHTML = '<h3>torpedoes</h3><ul>';
+    this.myTorps.innerHTML = '<h3>trpds</h3><ul>';
     for (tid in myTorpedoes) {
       this.myTorps.innerHTML += '<li>' + tid + ' <b><a href="#" onClick="detonate('+ tid +')">[!]</a></b></li>';
     };
@@ -101,7 +101,7 @@ RDR.prototype = {
     this.RDR.appendChild(b1);
 
     this.torpedoList.className = 'hudWidget';
-    this.torpedoList.innerHTML = '<h3>torpedoes</h3>';
+    this.torpedoList.innerHTML = '<h3>trpds</h3>';
     this.RDR.appendChild(this.torpedoList);
   },
 
@@ -117,7 +117,7 @@ RDR.prototype = {
     };
     this.ships.innerHTML += '</ul>';
 
-    this.torpedoList.innerHTML = '<h3>torpedoes</h3><ul>';
+    this.torpedoList.innerHTML = '<h3>trpds</h3><ul>';
     // torp loop
     for (tid in torpedoes){
       if (myTorpedoes.hasOwnProperty(tid)){  // not in list?

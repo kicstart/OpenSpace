@@ -17,19 +17,22 @@
 
   </head>
   <body>
-    <script src="js/Three.js"></script>
+    <script src="js/ThreeFlares.js"></script>>
+    <!-- <script src="js/Three.js"></script> -->
+    <!-- <script src="js/LensFlare.js"></script> -->
     <script src="/socket.io/socket.io.js"></script>
     <script src="js/RequestAnimationFrame.js"></script>
-    <script src="js/Stats.js"></script>
     <script src="js/Ship.js"></script>  
     <script src="js/Hud.js"></script>       
     <script src="js/CameraView.js"></script> 
+    <script src="js/Explosion.js"></script>
     <script>
 // variables
       var shipID, torpID;
       var myTorpedoes = {};
       var ships = {};
       var torpedoes = {};
+      var effects = [];
       var world;
       var newWorldFlag = false;    
       var msg, latest, world;
@@ -46,9 +49,27 @@
       var jLoader = new THREE.JSONLoader(true);      
 
 // functions
+      function lensFlareUpdateCallback( object ) {
+        var f, fl = object.lensFlares.length;
+        var flare;
+        var vecX = -object.positionScreen.x * 2;
+        var vecY = -object.positionScreen.y * 2;
+
+        for( f = 0; f < fl; f++ ) {
+          flare = object.lensFlares[ f ];
+          flare.x = object.positionScreen.x + vecX * flare.distance;
+          flare.y = object.positionScreen.y + vecY * flare.distance;
+          flare.rotation = 0;
+	}
+        object.lensFlares[ 2 ].y += 0.025;
+        object.lensFlares[ 3 ].rotation = object.positionScreen.x * 0.5 + 45 * Math.PI / 180;
+
+      }
+
       function updatePosition(worldSignal) {
           for(var i=0;i<world.ships.length;i++){
             var m = world.ships[i];
+            ships[m.id].hull = m.hull;
             ships[m.id].position = m.position;
             ships[m.id].velocity = m.velocity;
             ships[m.id].angularVelocity = m.angularVelocity;
@@ -83,7 +104,14 @@
           'obj/berth.js', 
           function(geo){
             geo.materials[0].shading = THREE.FlatShading;
-            var material = new THREE.MeshFaceMaterial();
+            // var material = new THREE.MeshFaceMaterial();
+            var material = new THREE.MeshPhongMaterial({
+              ambient: 0xffffff,
+              color: 0xb01c08,
+              specular: 0xffffff,
+              shininess: 50,
+              perPixel: true,
+            });
             station = new THREE.Mesh(geo, material);
             station.scale.set(0.01, 0.01, 0.01);
             station.updateMatrix();
@@ -134,14 +162,22 @@
        });
        socket.on('openspace.detonate.torpedo',function(message){
           var t = message.torpedo;
-          // todo: something
+          if (torpedoes.hasOwnProperty(t.id)){
+            delete torpedoes[t.id];
+          };
+          if (myTorpedoes.hasOwnProperty(t.id)){
+            delete myTorpedoes[t.id];
+          }; 
+          var x = new Explosion(t.position, 20000);
+          effects.push(x);
+          x.load(function(mesh){scene.add(mesh)});
        });
 
 // callback chain
-       loadWorld(function(){
+       // loadWorld(function(){
          loadBerth(function(){
-         })
-       });
+         });
+       //});
       
 // init
 // animate
@@ -156,8 +192,8 @@
         scene.add(camera);
         
         
-        // Sphere
-        scene.add(sphereMesh);
+        //Sphere
+        // scene.add(sphereMesh);
 
         // Add the Station 
         scene.add( station );
@@ -173,17 +209,48 @@
        };
 
        // Lights
-       var directionalLight = new THREE.DirectionalLight(/*Math.random() * 0xffffff*/0xeeeeee );
+       var textureFlare0 = THREE.ImageUtils.loadTexture( "textures/lensflare/lensflare0.png" );
+       var textureFlare2 = THREE.ImageUtils.loadTexture( "textures/lensflare/lensflare2.png" );
+       var textureFlare3 = THREE.ImageUtils.loadTexture( "textures/lensflare/lensflare3.png" );
 
-       pointLight = new THREE.PointLight( 0xffffff, 10 );
-       pointLight.position.x = -100000;
-       scene.add( pointLight );
+       addLight(0.995, 0.025, 0.99, -1500, 0, 0); 
+
+       function addLight( h, s, v, x, y, z ) {
+         var light = new THREE.PointLight( 0xffffff, 1.5, 4500 );
+         light.position.set( x, y, z );
+         scene.add( light );
+         light.color.setHSV( h, s, v );
+         var flareColor = new THREE.Color( 0xffffff );
+         flareColor.copy( light.color );
+         THREE.ColorUtils.adjustHSV( flareColor, 0, -0.5, 0.5 );
+         var lensFlare = new THREE.LensFlare( textureFlare0, 700, 0.0, THREE.AdditiveBlending, flareColor );
+         lensFlare.add( textureFlare2, 512, 0.0, THREE.AdditiveBlending );
+         lensFlare.add( textureFlare2, 512, 0.0, THREE.AdditiveBlending );
+         lensFlare.add( textureFlare2, 512, 0.0, THREE.AdditiveBlending );
+         lensFlare.add( textureFlare3, 60, 0.6, THREE.AdditiveBlending );
+         lensFlare.add( textureFlare3, 70, 0.7, THREE.AdditiveBlending );
+         lensFlare.add( textureFlare3, 120, 0.9, THREE.AdditiveBlending );
+         lensFlare.add( textureFlare3, 70, 1.0, THREE.AdditiveBlending );
+         lensFlare.customUpdateCallback = lensFlareUpdateCallback;
+         lensFlare.position = light.position;
+         scene.add( lensFlare );
+       }
+
+       // var directionalLight = new THREE.DirectionalLight(/*Math.random() * 0xffffff*/0xeeeeee );
+       // pointLight = new THREE.PointLight( 0xffffff, 1 );
+       // pointLight.position.x = -100000;
+       // scene.add( pointLight );
 
        renderer = new THREE.WebGLRenderer();
        renderer.setSize( window.innerWidth, window.innerHeight );
 
        container.appendChild( renderer.domElement );
-      
+       
+       renderer.gammaInput = true;
+       renderer.gammaOutput = true;
+       renderer.physicallyBasedShading = true;
+       renderer.addPlugin( new THREE.LensFlarePlugin() );  
+ 
        hud.init(container);  
      }
 
@@ -197,7 +264,10 @@
         
         for (var shipID in ships) ships[shipID].animate();
         for (var tID in torpedoes) torpedoes[tID].animate();
-                          
+        for (var i = 0; i < effects.length; i++){
+          effects[i].animate();
+        };                  
+        
         render();
         hud.animate();
       }
@@ -205,7 +275,7 @@
       function render() {
         var p = ships[shipID].position;
         camView.setCamera();
-        sphereMesh.position = p;
+        // sphereMesh.position = p;
         renderer.render( scene, camera );      
       }
       

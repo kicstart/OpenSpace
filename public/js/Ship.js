@@ -17,8 +17,17 @@ Ship.prototype = {
     var loader = new THREE.JSONLoader(true);
     var scope = this;
     var handler = function(geo){
+        
         geo.materials[0].shading = THREE.FlatShading;
-        var material = new THREE.MeshFaceMaterial();
+        // var material = new THREE.MeshFaceMaterial();
+        var material = new THREE.MeshPhongMaterial({ // Plastic toy look
+          ambient: 0xffffff,
+          color: 0x1646ae,
+          specular: 0xffffff,
+          shininess: 50,
+          perPixel: true,
+          }
+        );
         var nuModel = new THREE.Mesh(geo, material);
         scope.mesh = nuModel;
         scope.mesh.useQuaternion = true;
@@ -90,7 +99,9 @@ Ship.prototype = {
   },
 
   getUpVector: function(){
-    return this.mesh.matrix.getColumnY();
+    var m = this.mesh.matrix;
+    return new THREE.Vector3(m.n12,m.n22,m.n32);
+    // return this.mesh.matrix.getColumnY();
   },
 
   getDownVector: function(){
@@ -98,13 +109,15 @@ Ship.prototype = {
     return up.multiplyScalar(-1);
   },
 
-  getLeftVector: function(){
-    var right = this.getRightVector();
+  getRightVector: function(){
+    var right = this.getLeftVector();
     return right.multiplyScalar(-1);
   },
 
-  getRightVector: function(){
-    return this.mesh.matrix.getColumnX();
+  getLeftVector: function(){
+    var m = this.mesh.matrix;
+    return new THREE.Vector3(m.n11,m.n21,m.n31);
+    // return this.mesh.matrix.getColumnX();
   },
 };
 
