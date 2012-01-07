@@ -52,6 +52,51 @@ Ship.prototype = {
       this.mesh.quaternion,
       this.quaternionFromYawPitchRoll(yaw, pitch, roll));
     this.torpedoCalculations();
+    if (orientationTarget != undefined) this.orientation();
+  },
+
+  orientationStages: {'CANCEL_':0, 'ALIGN_':1, 'ROTATE_':2},
+
+  currentOrientationStage: 'CANCEL_',
+
+  orientation: function(){
+    var aV = this.angularVelocity;
+    switch(this.currentOrientationStage){
+      case 'CANCEL_':  // cancel current rotation
+        if (aV.z != 0){
+          if (aV.z < 0){
+            socket.emit('ship.thrust', {type:'rollLeft', shipId: shipID});
+          } else {
+            socket.emit('ship.thrust', {type:'rollRight', shipId: shipID});
+          }
+        };
+        if (aV.x != 0){
+          if (aV.x < 0){
+            socket.emit('ship.thrust', {type:'pivotLeft', shipId: shipID});
+          } else {
+            socket.emit('ship.thrust', {type:'pivotRight', shipId: shipID});
+          }
+        };
+        if (aV.y != 0){
+          if (aV.y < 0){
+            socket.emit('ship.thrust', {type:'noseDown', shipId: shipID});
+          } else {
+            socket.emit('ship.thrust', {type:'noseUp', shipId: shipID});
+          }
+        };
+        if (Math.abs(aV.x) < 0.00001 && Math.abs(aV.y) < 0.00001 && Math.abs(aV.z) < 0.00001){
+          alert('ready for alignment');
+          this.currentOrientationStage = 'ALIGN_';
+        };
+        break;
+      case 'ALIGN_':  // align yaw to target
+        break;
+      case 'ROTATE_': // align pitch to target
+
+        break;
+      default:
+        break;
+    };
   },
 
   torpedoCalculations: function(){
