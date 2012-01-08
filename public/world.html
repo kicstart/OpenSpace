@@ -29,6 +29,7 @@
     <script>
 // variables
       var shipID, torpID;
+      var orientationTarget; 
       var myTorpedoes = {};
       var ships = {};
       var torpedoes = {};
@@ -49,6 +50,7 @@
       var jLoader = new THREE.JSONLoader(true);      
 
 // functions
+
       function lensFlareUpdateCallback( object ) {
         var f, fl = object.lensFlares.length;
         var flare;
@@ -379,6 +381,9 @@
             break;            
           case 68: // d, detonate
               socket.emit('torpedo.detonate', {torpedoId: torpID});
+            break;
+          case 79: // o, orient to target, or 0,0,0
+            orientationTarget = new THREE.Vector3(0,0,0);
             break;
           default:
             break;
