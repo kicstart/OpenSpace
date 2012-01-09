@@ -34,9 +34,11 @@
       var ships = {};
       var torpedoes = {};
       var effects = [];
-      var world;
       var newWorldFlag = false;    
       var msg, latest, world;
+
+      var sun, sunflare;
+
       var socket;
       var container, stats;
         
@@ -44,7 +46,7 @@
       var camera, renderer, objects, sphereMesh;
       var camView = new CameraViewController();
       var particleLight, pointLight;
-      var station, skin;
+      var station, skin, starSphere;
       
       var hud = new Hud(); 
       var jLoader = new THREE.JSONLoader(true);      
@@ -98,7 +100,50 @@
           )
         );
         sphereMesh.scale.x = -1;
-                                if (callback !== undefined) callback();
+        if (callback !== undefined) callback();
+      };
+
+      function loadStars(callback){
+        var geometry = new THREE.Geometry();
+        var radius = 1500;
+        var starCount = 6000;
+
+          var material2 = new THREE.ParticleBasicMaterial();
+
+        for(var i=0;i<starCount;i++){
+          v = new THREE.Vector3( Math.random() * 2 - 1,
+                                 Math.random() * 2 - 1, 
+                                 Math.random() * 2 - 1);
+                                 if (v.distanceTo({x:0,y:0,z:0})<0.2){
+                                   v.multiplyScalar(radius);
+                                 };
+          v.multiplyScalar(radius);
+          geometry.vertices.push( new THREE.Vertex(v));
+        };
+
+        // Milky Way Outer
+        for(var i=0;i<starCount;i++){
+          v = new THREE.Vector3( Math.random() * 2 - 1,
+                                 Math.random() * 0.5 - 0.25,
+                                 Math.random() * 2 - 1);
+          if (v.distanceTo({x:0,y:0,z:0})<0.2){ v.multiplyScalar(radius);};                        
+          v.multiplyScalar(radius);
+          geometry.vertices.push( new THREE.Vertex(v));
+        };
+
+        // Milky Way Inner
+        for(var i=0; i<starCount;i++){
+          v = new THREE.Vector3(Math.random() * 2 - 1,
+          Math.random() * 0.25 - 0.125,
+          Math.random() * 2 - 1);
+          if (v.distanceTo({x:0,y:0,z:0})<0.2){ v.multiplyScalar(radius);};
+          v.multiplyScalar(radius);
+          geometry.vertices.push( new THREE.Vertex(v));
+        }
+
+        starSphere = new THREE.ParticleSystem( geometry, material2);
+        starSphere.dynamic = true;
+        if (callback !== undefined) callback();   
       };
                        
       function loadBerth(callback){
@@ -178,6 +223,7 @@
 // callback chain
        // loadWorld(function(){
          loadBerth(function(){
+           loadStars(function(){});
          });
        //});
       
@@ -196,6 +242,7 @@
         
         //Sphere
         // scene.add(sphereMesh);
+        scene.add(starSphere);
 
         // Add the Station 
         scene.add( station );
@@ -218,24 +265,24 @@
        addLight(0.995, 0.025, 0.99, -1500, 0, 0); 
 
        function addLight( h, s, v, x, y, z ) {
-         var light = new THREE.PointLight( 0xffffff, 1.5, 4500 );
-         light.position.set( x, y, z );
-         scene.add( light );
-         light.color.setHSV( h, s, v );
+         sun = new THREE.PointLight( 0xffffff, 1.5, 4500 );
+         sun.position.set( x, y, z );
+         scene.add( sun );
+         sun.color.setHSV( h, s, v );
          var flareColor = new THREE.Color( 0xffffff );
-         flareColor.copy( light.color );
+         flareColor.copy( sun.color );
          THREE.ColorUtils.adjustHSV( flareColor, 0, -0.5, 0.5 );
-         var lensFlare = new THREE.LensFlare( textureFlare0, 700, 0.0, THREE.AdditiveBlending, flareColor );
-         lensFlare.add( textureFlare2, 512, 0.0, THREE.AdditiveBlending );
-         lensFlare.add( textureFlare2, 512, 0.0, THREE.AdditiveBlending );
-         lensFlare.add( textureFlare2, 512, 0.0, THREE.AdditiveBlending );
-         lensFlare.add( textureFlare3, 60, 0.6, THREE.AdditiveBlending );
-         lensFlare.add( textureFlare3, 70, 0.7, THREE.AdditiveBlending );
-         lensFlare.add( textureFlare3, 120, 0.9, THREE.AdditiveBlending );
-         lensFlare.add( textureFlare3, 70, 1.0, THREE.AdditiveBlending );
-         lensFlare.customUpdateCallback = lensFlareUpdateCallback;
-         lensFlare.position = light.position;
-         scene.add( lensFlare );
+         sunflare = new THREE.LensFlare( textureFlare0, 700, 0.0, THREE.AdditiveBlending, flareColor );
+         sunflare.add( textureFlare2, 512, 0.0, THREE.AdditiveBlending );
+         sunflare.add( textureFlare2, 512, 0.0, THREE.AdditiveBlending );
+         sunflare.add( textureFlare2, 512, 0.0, THREE.AdditiveBlending );
+         sunflare.add( textureFlare3, 60, 0.6, THREE.AdditiveBlending );
+         sunflare.add( textureFlare3, 70, 0.7, THREE.AdditiveBlending );
+         sunflare.add( textureFlare3, 120, 0.9, THREE.AdditiveBlending );
+         sunflare.add( textureFlare3, 70, 1.0, THREE.AdditiveBlending );
+         sunflare.customUpdateCallback = lensFlareUpdateCallback;
+         sunflare.position = sun.position;
+         scene.add( sunflare );
        }
 
        // var directionalLight = new THREE.DirectionalLight(/*Math.random() * 0xffffff*/0xeeeeee );
@@ -277,7 +324,11 @@
       function render() {
         var p = ships[shipID].position;
         camView.setCamera();
-        // sphereMesh.position = p;
+        sun.position.x = p.x - 1500;
+        sun.position.y = p.y;
+        sun.position.z = p.z;
+        sunflare.position = sun.position;
+        starSphere.position = p;
         renderer.render( scene, camera );      
       }
       
