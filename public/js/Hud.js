@@ -47,6 +47,10 @@ Hud.prototype = {
   newShip: function(){
 
   },
+  shipDestroyed: function(ship){
+    this.TAG.remove(ship);
+    this.WPN.destroyed(ship);
+  },
   setTarget: function(trgtID){
      this.WPN.targetObject = ships[trgtID];
   },
@@ -88,9 +92,12 @@ TAG.prototype = {
       var d = $('.tag#'+s);
       d.css('bottom', (p.y + 1) * window.innerHeight / 2 + 10);
       d.css('left', (p.x + 1) * window.innerWidth / 2);
-      //d.css('top', 500);
-      //d.css('left', 300);
+      d.html(ships[s].distanceTo(ships[shipID]).toFixed(0));
     }
+  },
+
+  remove: function(ship){
+     $('.tag#' + ship.id).remove();
   },
 };
 
@@ -131,7 +138,7 @@ WPN.prototype = {
     // target
     this.target.innerHTML = '<h3>wpns trgt</h3>';
     if (this.targetObject != undefined){
-      this.target.innerHTML += '<ul><li>' + this.targetObject.id + '</li><li>' + this.targetObject.position.x.toFixed(0) + ' ' + this.targetObject.position.y.toFixed(0) + ' ' + this.targetObject.position.z.toFixed(0) + '</li></ul>';
+      this.target.innerHTML += '<p>' + this.targetObject.id + ' :: ' + this.targetObject.position.x.toFixed(0) + ' ' + this.targetObject.position.y.toFixed(0) + ' ' + this.targetObject.position.z.toFixed(0) + '</p>';
     };
     // torpedoes 
     this.myTorps.innerHTML = '<h3>trpds</h3><ul>';
@@ -139,6 +146,13 @@ WPN.prototype = {
       this.myTorps.innerHTML += '<li>' + tid + ' ' + myTorpedoes[tid].distance.toFixed(0) + '</li>';
     };
     this.inventory.innerHTML = '<h3>inv</h3><p><b>' + torpedoInventory + '</b></p>';
+  },
+
+  destroyed: function(s){
+    if (this.targetObject.id == s.id){
+      this.targetObject = undefined;
+      this.target.innerHTML = '<h3>wpns trgt</h3><b>DESTROYED</b>';
+    }
   },
 };
 
