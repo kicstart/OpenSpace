@@ -64,6 +64,7 @@
       var camView = new CameraViewController();
       var particleLight, pointLight;
       var station, skin, starSphere;
+      var starSphereRed, starSphereBlue, starSphereWhite, starSphereYellow;
       
       var hud = new Hud(); 
       var jLoader = new THREE.JSONLoader(true);      
@@ -122,10 +123,29 @@
 
       function loadStars(callback){
         var geometry = new THREE.Geometry();
+
+        var geometryRed   = new THREE.Geometry();
+        var geometryBlue  = new THREE.Geometry();
+        var geometryWhite = new THREE.Geometry();
+        var geometryYellow = new THREE.Geometry();
+ 
+        var geos = [geometryWhite,
+                    geometryBlue,
+                    geometryRed,
+                    geometryYellow];
+ 
         var radius = 1500;
         var starCount = 6000;
 
-          var material2 = new THREE.ParticleBasicMaterial();
+        var material2 = new THREE.ParticleBasicMaterial();
+
+        var materialWhite = new THREE.ParticleBasicMaterial();
+        var blue = new THREE.Color();
+        var materialBlue  = new THREE.ParticleBasicMaterial({color:blue});
+        var red = new THREE.Color();
+        var materialRed   = new THREE.ParticleBasicMaterial({color:red});
+        var yellow = new THREE.Color();
+        var materialYellow = new THREE.ParticleBasicMaterial({color:yellow});
 
         for(var i=0;i<starCount;i++){
           v = new THREE.Vector3( Math.random() * 2 - 1,
@@ -135,7 +155,10 @@
                                    v.multiplyScalar(radius);
                                  };
           v.multiplyScalar(radius);
-          geometry.vertices.push( new THREE.Vertex(v));
+          var gFloor = Math.floor(Math.random() * geos.length);
+          var geoSelect = geos[gFloor];
+          geoSelect.vertices.push( new THREE.Vertex(v));
+          // geometry.vertices.push( new THREE.Vertex(v));
         };
 
         // Milky Way Outer
@@ -145,7 +168,10 @@
                                  Math.random() * 2 - 1);
           if (v.distanceTo({x:0,y:0,z:0})<0.2){ v.multiplyScalar(radius);};                        
           v.multiplyScalar(radius);
-          geometry.vertices.push( new THREE.Vertex(v));
+          var gFloor = Math.floor(Math.random() * geos.length);
+          var geoSelect = geos[gFloor];
+          geoSelect.vertices.push( new THREE.Vertex(v));
+          // geometry.vertices.push( new THREE.Vertex(v));
         };
 
         // Milky Way Inner
@@ -155,8 +181,16 @@
           Math.random() * 2 - 1);
           if (v.distanceTo({x:0,y:0,z:0})<0.2){ v.multiplyScalar(radius);};
           v.multiplyScalar(radius);
-          geometry.vertices.push( new THREE.Vertex(v));
+          var gFloor = Math.floor(Math.random() * geos.length);
+          var geoSelect = geos[gFloor];
+          geoSelect.vertices.push( new THREE.Vertex(v));
+          // geometry.vertices.push( new THREE.Vertex(v));
         }
+
+        starSphereWhite = new THREE.ParticleSystem( geometryWhite, materialWhite );
+        starSphereRed   = new THREE.ParticleSystem( geometryRed, materialRed );
+        starSphereBlue  = new THREE.ParticleSystem( geometryBlue, materialBlue );
+        starSphereYellow = new THREE.ParticleSystem(geometryYellow, materialYellow);
 
         starSphere = new THREE.ParticleSystem( geometry, material2);
         starSphere.dynamic = true;
@@ -271,10 +305,17 @@
         camera.position.set( 2, 2, 3 );
         scene.add(camera);
         
-        
         //Sphere
         // scene.add(sphereMesh);
-        scene.add(starSphere);
+        // scene.add(starSphere);
+        scene.add(starSphereWhite);
+        scene.add(starSphereBlue);
+        scene.add(starSphereRed);
+        scene.add(starSphereYellow);
+        starSphereBlue.material.color.setRGB(0.8, 0.8, 1);
+        starSphereRed.material.color.setRGB(1, 0.8, 0.8);
+        starSphereYellow.material.color.setRGB(0.8, 1, 1);
+
 
         // Add the Station 
         scene.add( station );
@@ -361,6 +402,10 @@
         sun.position.z = p.z;
         sunflare.position = sun.position;
         starSphere.position = p;
+        starSphereWhite.position = p;
+        starSphereRed.position = p;
+        starSphereBlue.position = p;
+        starSphereYellow.position = p;
         renderer.render( scene, camera );      
       }
       
