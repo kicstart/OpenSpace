@@ -1,18 +1,15 @@
-define(['underscore', 'libs/three'], function(_, THREE){
+define(['backbone', 'underscore', 'libs/three'], function(Backbone, _, THREE){
   var Ship = function(type,x,y,z) {
     this.id = 0;
     this.ownerId = 0;
     this.type = type || 'ship';
     this.hull = 800;
 
-    this.position   = {};
-    this.position.x = x || 0;
-    this.position.y = y || 0;
-    this.position.z = z || 0;
+    this.position         = new THREE.Vector3(x,y,z);
     
-    this.velocity         = {x:0,y:0,z:0};
-    this.angularVelocity  = {x:0, y:0, z:0};
-    this.scale            = {x:0, y:0, z:0};
+    this.velocity         = new THREE.Vector3();
+    this.angularVelocity  = new THREE.Vector3();
+    this.scale            = new THREE.Vector3();
 
     this.quaternion       = THREE.quaternionFromYawPitchRoll(0, 0, 0);
     this.matrix           = new THREE.Matrix4();
@@ -25,9 +22,7 @@ define(['underscore', 'libs/three'], function(_, THREE){
     constructor: Ship,
 
     animate: function() {
-      this.position.x += this.velocity.x;						
-      this.position.y += this.velocity.y;
-      this.position.z += this.velocity.z;
+      this.position.addSelf(this.velocity);
       
       var yaw, pitch, roll;
       
@@ -41,19 +36,14 @@ define(['underscore', 'libs/three'], function(_, THREE){
       impulse = impulse || 0.001;
 
       this.matrix.setPosition(this.position);
-      this.matrix.scale = this.scale;
       this.matrix.setRotationFromQuaternion(this.quaternion);
       var direction = this.matrix.getColumnZ();
       direction.setLength(impulse);  // impulse value, part of ship-specific properties?
-      this.velocity.x +=  direction.x;
-      this.velocity.y +=  direction.y;
-      this.velocity.z +=  direction.z;
+      this.velocity.addSelf(direction);
     },
 
     distanceTo: function(v) {
-      var pos = this.position;
-      var posVector = new THREE.Vector3(pos.x, pos.y, pos.z);
-      return posVector.distanceTo(v);
+      return this.position.distanceTo(v);
     },
 
     damage: function(d) {
@@ -90,10 +80,18 @@ define(['underscore', 'libs/three'], function(_, THREE){
     },
 
     reset: function() {
-      this.position.x = this.position.y = this.position.z = 0;
-      this.velocity.x = this.velocity.y = this.velocity.z = 0;
-      this.angularVelocity.x = this.angularVelocity.y = this.angularVelocity.z = 0;
+      this.position.set(0,0,0);
+      this.velocity.set(0,0,0);
+      this.angularVelocity.set(0,0,0);
       this.quaternion = THREE.quaternionFromYawPitchRoll(0, 0, 0); 
+    },
+
+    _threeToJSON: function(t) {
+      return {
+        x: t.x,
+        y: t.y,
+        z: t.z,
+      }
     },
 
     getState: function() {
@@ -102,9 +100,9 @@ define(['underscore', 'libs/three'], function(_, THREE){
         ownerId         : this.ownerId,
         type            : this.type,
         hull            : this.hull,
-        position        : this.position,
-        velocity        : this.velocity,
-        angularVelocity : this.angularVelocity,
+        position        : this._threeToJSON(this.position), 
+        velocity        : this._threeToJSON(this.velocity),
+        angularVelocity : this._threeToJSON(this.angularVelocity),
         quaternion      : {
           x : this.quaternion.x,
           y : this.quaternion.y,
@@ -116,17 +114,12 @@ define(['underscore', 'libs/three'], function(_, THREE){
 
     // useful for intiliziting the position of a torpedo
     setState: function(state) {
-      this.position         = _.clone(state.position);
       this.hull             = state.hull;
-      this.velocity         = _.clone(state.velocity);
-      this.angularVelocity  = _.clone(state.angularVelocity);
+      this.position.copy(state.position);
+      this.velocity.copy(state.velocity);
+      this.angularVelocity.copy(state.angularVelocity);
 
-      quaternion = _.clone(state.quaternion);
-
-      this.quaternion.x     = quaternion.x;
-      this.quaternion.y     = quaternion.y;
-      this.quaternion.z     = quaternion.z;
-      this.quaternion.w     = quaternion.w;
+      this.quaternion.copy(state.quaternion);
     },
 
   }
