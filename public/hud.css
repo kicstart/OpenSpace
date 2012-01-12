@@ -145,3 +145,12 @@
   font-weight:bold;
   color:rgba(255, 255, 255, 0.34);
 }
+
+.tag{
+  position:absolute;
+  width:0;
+  height:0;
+  border-top: 20px solid green;
+  border-left: 10px solid transparent;
+  border-right: 10px solid transparent;
+}
