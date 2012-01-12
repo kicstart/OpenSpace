@@ -13,9 +13,9 @@ requirejs.config({
 });
 
 var THREE = requirejs('libs/three');
-console.log(THREE);
 
-var OpenSpace = require('./libs/ship.js');
+var Ship = requirejs('libs/ship');
+console.log(Ship);
 
 io.configure(function() {
   io.set('log level', 1);
@@ -138,7 +138,7 @@ io.sockets.on('connection', function (socket) {
     // possible solution is to use the sessionID to identify the ship
 
     // first time here? get yer'self a ship!
-    ship = new OpenSpace.Ship(
+    ship = new Ship(
       'ship',
       Math.random() * 1000 - 500,  
       Math.random() * 1000 - 500,  
@@ -170,7 +170,7 @@ io.sockets.on('connection', function (socket) {
   socket.on('torpedo.fire', function(data, fn) {
     // TODO: it would be great if this were integrated into the ship object
     if (ship.torpedoInventory > 0){
-    var torpedo = new OpenSpace.Ship('torpedo');
+    var torpedo = new Ship('torpedo');
     torpedo.id = ++shipCounter;
     torpedo.setState(ship.getState());
     torpedo.ownerId = ship.id; // set a reference to the owning ship
