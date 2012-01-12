@@ -8,6 +8,7 @@ Hud = function(){
   this.CAM = new CAM();
   this.RDR = new RDR();
   this.WPN = new WPN();
+  this.TAG = new TAG(this.top);
 };
 
 Hud.prototype = {
@@ -33,7 +34,7 @@ Hud.prototype = {
     this.left.appendChild(this.RDR.RDR);
     this.bottom.appendChild(this.CAM.CAM);
     this.right.appendChild(this.WPN.WPN);
-
+    this.TAG.init();
     parentNode.appendChild(this.top); 
   },
   animate: function(){
@@ -41,6 +42,55 @@ Hud.prototype = {
     this.CAM.animate();
     this.RDR.animate();
     this.WPN.animate();
+    this.TAG.animate();
+  },
+  newShip: function(){
+
+  },
+  setTarget: function(trgtID){
+     this.WPN.targetObject = ships[trgtID];
+  },
+};
+
+TAG = function(parent_elem){
+    this.parent_elem = parent_elem;
+    this.tags = [];
+    this.projector = new THREE.Projector();
+};
+
+TAG.prototype = {
+  constructor : TAG,
+
+  init: function(){
+    for (s in ships){
+       if (s == shipID) continue;
+       var t = document.createElement('div');
+       t.className = 'tag';
+       t.addEventListener('click', function(e){
+         hud.setTarget(t.id);  
+       });
+       t.id = s;
+       this.tags.push(t);
+       if(ships[s].mesh != undefined){
+       var p;
+       p = this.projector.projectVector(ships[s].mesh.position, camera);
+       t.style = 'top:' + p.y + ';left:' + p.x + ';';
+       this.parent_elem.appendChild(t);
+       }
+    }
+  },
+
+  animate: function(){
+    for (s in ships){
+      if (ships[s].mesh == undefined) continue;
+      if (s == shipID) continue;
+      var p = this.projector.projectVector(ships[s].mesh.position, camera);
+      var d = $('.tag#'+s);
+      d.css('bottom', (p.y + 1) * window.innerHeight / 2 + 10);
+      d.css('left', (p.x + 1) * window.innerWidth / 2);
+      //d.css('top', 500);
+      //d.css('left', 300);
+    }
   },
 };
 
@@ -49,6 +99,7 @@ WPN = function(){
   this.targetObject = null;
   this.target = document.createElement('div');
   this.myTorps = document.createElement('div');
+  this.inventory = document.createElement('div');
 };
 
 WPN.prototype = {
@@ -66,15 +117,28 @@ WPN.prototype = {
     this.myTorps.className = 'hudWidget';
     this.myTorps.innerHTML = '<h3>trpds</h3>';
     this.WPN.appendChild(this.myTorps);
+
+    var b1 = document.createElement('div');
+    b1.className = 'hudBreak';
+    this.WPN.appendChild(b1);
+
+    this.inventory.className = 'hudWidget';
+    this.inventory.innerHTML = '<h3>inv</h3>';
+    this.WPN.appendChild(this.inventory);
   },
 
   animate: function(){
     // target
+    this.target.innerHTML = '<h3>wpns trgt</h3>';
+    if (this.targetObject != undefined){
+      this.target.innerHTML += '<ul><li>' + this.targetObject.id + '</li><li>' + this.targetObject.position.x.toFixed(0) + ' ' + this.targetObject.position.y.toFixed(0) + ' ' + this.targetObject.position.z.toFixed(0) + '</li></ul>';
+    };
     // torpedoes 
     this.myTorps.innerHTML = '<h3>trpds</h3><ul>';
     for (tid in myTorpedoes) {
-      this.myTorps.innerHTML += '<li>' + tid + ' <b><a href="#" onClick="detonate('+ tid +')">[!]</a></b></li>';
+      this.myTorps.innerHTML += '<li>' + tid + ' ' + myTorpedoes[tid].distance.toFixed(0) + '</li>';
     };
+    this.inventory.innerHTML = '<h3>inv</h3><p><b>' + torpedoInventory + '</b></p>';
   },
 };
 
