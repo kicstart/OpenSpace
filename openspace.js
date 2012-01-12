@@ -10,11 +10,17 @@ var app = express.createServer(),
 
 requirejs.config({
   nodeRequire:  require,
+  paths: {
+    'three':        'libs/three',
+    'model':        'src/model',
+    'collection':   'src/collection',
+    'world':        'src/world',
+  },
 });
 
-var THREE = requirejs('libs/three');
-var Ship = requirejs('libs/ship');
-var World = requirejs('libs/world');
+var THREE = requirejs('three');
+var Ship = requirejs('model/ship');
+var World = requirejs('world');
 
 io.configure(function() {
   io.set('log level', 1);

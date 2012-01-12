@@ -1,4 +1,4 @@
-define(['backbone', 'underscore', 'libs/three'], function(Backbone, _, THREE){
+define(['backbone', 'underscore', 'three'], function(Backbone, _, THREE){
 
   var Ship = Backbone.Model.extend({
     defaults: function() {
