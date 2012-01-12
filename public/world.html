@@ -247,6 +247,7 @@
              var s = message.ship;
              scene.remove(ships[s.id].mesh);
              if (ships.hasOwnProperty(s.id)) delete ships[s.id];
+             hud.shipDestroyed(s);
           }
 
         });
