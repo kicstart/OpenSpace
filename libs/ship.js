@@ -1,5 +1,5 @@
 define(['underscore', 'libs/three'], function(_, THREE){
-  Ship = function(type,x,y,z) {
+  var Ship = function(type,x,y,z) {
     this.id = 0;
     this.ownerId = 0;
     this.type = type || 'ship';
