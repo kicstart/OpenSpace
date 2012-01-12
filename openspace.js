@@ -162,17 +162,19 @@ io.sockets.on('connection', function (socket) {
 
   socket.on('torpedo.fire', function(data, fn) {
     // TODO: it would be great if this were integrated into the ship object
+    if (ship.torpedoInventory > 0){
     var torpedo = new OpenSpace.Ship('torpedo');
     torpedo.id = ++shipCounter;
     torpedo.setState(ship.getState());
     torpedo.ownerId = ship.id; // set a reference to the owning ship
-    torpedo.drive(0.1);
+    torpedo.drive(1);
     game.addObject(torpedo);
     if (_.isFunction(fn)) {
       fn({status: 'success', msg: 'Torpedo fired', id: torpedo.id});
+      ship.torpedoInventory -= 1;
     };
     socket.broadcast.emit('openspace.new.torpedo', { msg: 'Torpedo detected', ship: ship.getState(), torpedo: torpedo.getState()}); // the everyone (but us) that we attack!
-  });
+    }});
 
   socket.on('torpedo.drive', function(data) {
     torpedo = _.find(ship.torpedoes, function(torpedo) { return torpedo.id == data.torpedoId });
@@ -191,15 +193,13 @@ io.sockets.on('connection', function (socket) {
       var dVector = new THREE.Vector3(pos.x, pos.y, pos.z);
       console.log(dVector);
       _.each(game.objects, function(obj) {
-        if (obj.distanceTo(dVector) <= 20) { // TODO: constant this
-          obj.damage(1500);  
-
-          // TODO: We need to remove ships that have been destroyed, ideally in an abstracted method
+        obj.damage(200000/Math.pow(obj.distanceTo(dVector),2));
+        if (obj.hull <= 0){
           game.destroyObject(obj);
           if (obj.type == 'ship') {
             io.sockets.emit('openspace.destroy.ship', { msg: 'Ship destroyed', ship: obj.getState()})
           }
-        }
+        };
       });
 
       // remove the torpedo from the world and notify
@@ -219,7 +219,7 @@ io.sockets.on('connection', function (socket) {
   });
 
   socket.on('ship.devReset', function() {
-    ship.reset();
+     ship.reset();
   });
 
 });

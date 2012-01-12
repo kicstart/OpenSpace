@@ -1,9 +1,10 @@
-Ship = function(shipClass){
-  this.id = -1;
+Ship = function(id, shipClass){
+  this.id = id;
   this.position = new THREE.Vector3(0,0,0);
   this.velocity = {x:0,y:0,z:0};
   this.angularVelocity = {x:0,y:0,z:0};
-  this.mesh = new THREE.Mesh(); 
+  this.mesh = new THREE.Mesh();
+  this.mesh.name = id;
   this.shipClass = shipClass;
   this.hull = this.shipClass.hull_pts;
   this.type = shipClass.type;
@@ -100,13 +101,19 @@ Ship.prototype = {
   },
 
   torpedoCalculations: function(){
-    var BLASTRADIUS = 20;
     for (tid in myTorpedoes){
       var trp = torpedoes[tid];
       var trg = myTorpedoes[tid].target;
-      if(trg != null && trp.distanceTo(trg) <= BLASTRADIUS){
+      var dist = trp.distanceTo(trg);
+      if (dist > myTorpedoes[tid].distance){   // past the maximum close point
+        // safety check
+        if (trp.distanceTo(ships[shipID]) < dist) {
+         // do not detonate! closer to me than them 
+        } else {
         socket.emit('torpedo.detonate', {torpedoId: tid});
+        }
       };
+      myTorpedoes[tid].distance = dist;
     };
   },
      

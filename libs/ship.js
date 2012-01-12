@@ -26,8 +26,7 @@ OpenSpace.Ship = function(type,x,y,z) {
   this.id = 0;
   this.ownerId = 0;
   this.type = type || 'ship';
-
-  this.hull = 1500;
+  this.hull = 800;
 
   this.position   = {};
   this.position.x = x || 0;
@@ -41,6 +40,7 @@ OpenSpace.Ship = function(type,x,y,z) {
   this.quaternion       = OpenSpace.quaternionFromYawPitchRoll(0, 0, 0);
   this.matrix           = new THREE.Matrix4();
 
+  this.torpedoInventory = 20;
   this.torpedoes        = new Array();
 }
 

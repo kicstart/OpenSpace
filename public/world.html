@@ -11,12 +11,28 @@
         margin: 0px;
         overflow: hidden;
       }
+      .redDeath {
+        width:100%;
+        height:100%;
+        position:absolute;
+        top:0px;
+        left:0px;
+        background-color:rgba(254, 57, 18, 0.9);
+        color:#fff;
+        padding-top:300px;
+        text-align:center;
+      }
+      .redDeath h1{
+        font-family: "Arial Black", sans-serif;
+        font-size: 10em;
+      }
       
     </style>
     <link rel="stylesheet" type="text/css" href="hud.css"></link>
 
   </head>
   <body>
+    <script src="js/jquery-1.6.2.min.js"></script>
     <script src="js/ThreeFlares.js"></script>>
     <!-- <script src="js/Three.js"></script> -->
     <!-- <script src="js/LensFlare.js"></script> -->
@@ -29,6 +45,7 @@
     <script>
 // variables
       var shipID, torpID;
+      var torpedoInventory = 20;
       var orientationTarget; 
       var myTorpedoes = {};
       var ships = {};
@@ -74,7 +91,7 @@
           for(var i=0;i<world.ships.length;i++){
             var m = world.ships[i];
             ships[m.id].hull = m.hull;
-            ships[m.id].position = m.position;
+            ships[m.id].position.set(m.position.x, m.position.y, m.position.z);
             ships[m.id].velocity = m.velocity;
             ships[m.id].angularVelocity = m.angularVelocity;
             ships[m.id].mesh.quaternion.set(
@@ -83,7 +100,7 @@
           };
           for(var i=0;i<world.torpedoes.length;i++){
             var torp = world.torpedoes[i];
-            torpedoes[torp.id].position = torp.position;
+            torpedoes[torp.id].position.set(torp.position.x, torp.position.y, torp.position.z);
             torpedoes[torp.id].velocity = torp.velocity;
             torpedoes[torp.id].angularVelocity = torp.angularVelocity;
             torpedoes[torp.id].mesh.quaternion.set(
@@ -182,13 +199,13 @@
          // Add the Ships Mesh
          world = msg.world;
          for (var i=0;i<world.ships.length;i++){
-           var s = new Ship(shipClasses.MartianDestroyer);
+           var s = new Ship(world.ships[i].id, shipClasses.MartianDestroyer);
            s.id = world.ships[i].id;
            ships[s.id] = s;
          };
          // Add the Torpedo Meshs
          for (var i=0; i<world.torpedoes.length; i++){
-           var t = new Ship(shipClasses.TorpedoMkI);
+           var t = new Ship(world.torpedoes[i].id, shipClasses.TorpedoMkI);
            t.id = world.torpedoes[i].id;
            torpedoes[t.id] = t;
          };
@@ -196,19 +213,20 @@
          animate();
        });
        socket.on('openspace.newShip',function(message){
-         var newShip = new Ship(shipClasses.MartianDestroyer);
+         var newShip = new Ship(message.shipID, shipClasses.MartianDestroyer);
          newShip.id = message.shipID;
          ships[message.shipID] = newShip;
          newShip.load(function(mesh){scene.add(mesh)});
        });
        socket.on('openspace.new.torpedo',function(message){
-         var t = new Ship(shipClasses.TorpedoMkI);
+         var t = new Ship(message.torpedo.id, shipClasses.TorpedoMkI);
          t.id = message.torpedo.id;
          torpedoes[message.torpedo.id] = t;
          t.load(function(mesh){scene.add(mesh)});
        });
        socket.on('openspace.detonate.torpedo',function(message){
-          var t = message.torpedo;
+         var t = message.torpedo;
+          scene.remove(torpedoes[t.id].mesh);
           if (torpedoes.hasOwnProperty(t.id)){
             delete torpedoes[t.id];
           };
@@ -218,7 +236,20 @@
           var x = new Explosion(t.position, 20000);
           effects.push(x);
           x.load(function(mesh){scene.add(mesh)});
-       });
+        });
+        socket.on('openspace.destroy.ship', function(message){
+          if (message.ship.id == shipID){
+              var loose = document.createElement('div');
+              loose.className = 'redDeath';
+              loose.innerHTML = "<h1>BOOM</h1><p>(THAT'S THE SOUND OF YOU DYING)</p>";
+              container.appendChild(loose);
+            } else {
+             var s = message.ship;
+             scene.remove(ships[s.id].mesh);
+             if (ships.hasOwnProperty(s.id)) delete ships[s.id];
+          }
+
+        });
 
 // callback chain
        // loadWorld(function(){
@@ -392,11 +423,13 @@
             break;
           case 84: // fire torpedoes
             socket.emit('torpedo.fire', {shipId: shipID}, function(newTorp){
-              var t = new Ship(shipClasses.TorpedoMkI);
+              var t = new Ship(newTorp.id, shipClasses.TorpedoMkI);
+              torpedoInventory -= 1;
               t.id = newTorp.id;
               torpedoes[t.id] = t;
               t.load(function(mesh){scene.add(mesh)});
-              myTorpedoes[t.id] = {target:hud.WPN.targetObject};
+              myTorpedoes[t.id] = {target:hud.WPN.targetObject,
+                                   distance:t.distanceTo(hud.WPN.targetObject)};
             });
             break;
       
@@ -430,8 +463,17 @@
           case 82: // r ~ Reset in dev mode
               socket.emit('ship.devReset', {shipId:shipID});
             break;            
-          case 68: // d, detonate
-              socket.emit('torpedo.detonate', {torpedoId: torpID});
+            case 68: // d, detonate
+            console.log('detonate!');
+            var minTorpID;
+              for (key in torpedoes){
+                if (minTorpID == undefined){
+                   minTorpID = key;
+                  } else {
+                   if(key < minTorpID) minTorpID = key;
+                };
+              };
+              if (minTorpID != undefined) socket.emit('torpedo.detonate', {torpedoId: minTorpID});  // detonate oldest torpedo
             break;
           case 79: // o, orient to target, or 0,0,0
             orientationTarget = new THREE.Vector3(0,0,0);
