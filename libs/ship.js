@@ -1,49 +1,55 @@
 define(['backbone', 'underscore', 'libs/three'], function(Backbone, _, THREE){
-  var Ship = function(type,x,y,z) {
-    this.id = 0;
-    this.ownerId = 0;
-    this.type = type || 'ship';
-    this.hull = 800;
 
-    this.position         = new THREE.Vector3(x,y,z);
+  var Ship = Backbone.Model.extend({
+    defaults: function() {
+      return {
+        ownerId:          0,
+        type:             'ship',
+        
+        hull:             800,
+        torpedoInventory: 20,
+        torpedoes:        new Array(),
+        
+
+        position:         new THREE.Vector3(),
+        velocity:         new THREE.Vector3(),
+        angularVelocity:  new THREE.Vector3(),
+        scale:            new THREE.Vector3(),
+
+        quaternion:       THREE.quaternionFromYawPitchRoll(0,0,0),
+        matrix:           new THREE.Matrix4(),
+
+      }
+    },
+
+    //TODO: Should we store the THREE objects in the attributes hash, or directly on the object?
+    initialize: function(options) {
     
-    this.velocity         = new THREE.Vector3();
-    this.angularVelocity  = new THREE.Vector3();
-    this.scale            = new THREE.Vector3();
-
-    this.quaternion       = THREE.quaternionFromYawPitchRoll(0, 0, 0);
-    this.matrix           = new THREE.Matrix4();
-
-    this.torpedoInventory = 20;
-    this.torpedoes        = new Array();
-  }
-
-  Ship.prototype = {
-    constructor: Ship,
+    },
 
     animate: function() {
-      this.position.addSelf(this.velocity);
+      this.get('position').addSelf(this.get('velocity'));
       
       var yaw, pitch, roll;
       
-      yaw   = this.angularVelocity.z;
-      pitch = this.angularVelocity.y;
-      roll  = this.angularVelocity.x;
-      this.quaternion.multiply(this.quaternion, THREE.quaternionFromYawPitchRoll(yaw, pitch, roll));
+      yaw   = this.get('angularVelocity').z;
+      pitch = this.get('angularVelocity').y;
+      roll  = this.get('angularVelocity').x;
+      this.get('quaternion').multiply(this.get('quaternion'), THREE.quaternionFromYawPitchRoll(yaw, pitch, roll));
     },
 
     drive: function(impulse) {
       impulse = impulse || 0.001;
 
-      this.matrix.setPosition(this.position);
-      this.matrix.setRotationFromQuaternion(this.quaternion);
-      var direction = this.matrix.getColumnZ();
+      this.get('matrix').setPosition(this.get('position'));
+      this.get('matrix').setRotationFromQuaternion(this.get('quaternion'));
+      var direction = this.get('matrix').getColumnZ();
       direction.setLength(impulse);  // impulse value, part of ship-specific properties?
-      this.velocity.addSelf(direction);
+      this.get('velocity').addSelf(direction);
     },
 
     distanceTo: function(v) {
-      return this.position.distanceTo(v);
+      return this.get('position').distanceTo(v);
     },
 
     damage: function(d) {
@@ -53,24 +59,32 @@ define(['backbone', 'underscore', 'libs/three'], function(Backbone, _, THREE){
     thrust: function(type) {
       switch (type) {
         case 'noseDown':
-          this.angularVelocity.y += 0.0001;
+          this.get('angularVelocity').y += 0.0001;
           break;
         case 'noseUp':
-          this.angularVelocity.y -= 0.0001;
+          this.get('angularVelocity').y -= 0.0001;
           break;
         case 'rollLeft':
-          this.angularVelocity.z += 0.0001;
+          this.get('angularVelocity').z += 0.0001;
           break;
         case 'rollRight':
-          this.angularVelocity.z -= 0.0001;
+          this.get('angularVelocity').z -= 0.0001;
           break;
         case 'pivotLeft':
-          this.angularVelocity.x += 0.0001;
+          this.get('angularVelocity').x += 0.0001;
           break;
         case 'pivotRight':
-          this.angularVelocity.x -= 0.0001;
+          this.get('angularVelocity').x -= 0.0001;
           break;
       }
+    },
+
+    hasTorpedoes: function() {
+      return this.get('torpedoInventory') > 0;
+    },
+
+    decTorpedoes: function() {
+      this.set({torpedoInventory: this.get('torpedoInventory') - 1});
     },
 
     destroyTorpedo: function (torpedo) {
@@ -80,10 +94,10 @@ define(['backbone', 'underscore', 'libs/three'], function(Backbone, _, THREE){
     },
 
     reset: function() {
-      this.position.set(0,0,0);
-      this.velocity.set(0,0,0);
-      this.angularVelocity.set(0,0,0);
-      this.quaternion = THREE.quaternionFromYawPitchRoll(0, 0, 0); 
+      this.get('position').set(0,0,0);
+      this.get('velocity').set(0,0,0);
+      this.get('angularVelocity').set(0,0,0);
+      this.get('quaternion') = THREE.quaternionFromYawPitchRoll(0, 0, 0); 
     },
 
     _threeToJSON: function(t) {
@@ -94,35 +108,37 @@ define(['backbone', 'underscore', 'libs/three'], function(Backbone, _, THREE){
       }
     },
 
+    // TODO: This should probably be toJSON()
     getState: function() {
       return {
         id              : this.id,
-        ownerId         : this.ownerId,
-        type            : this.type,
-        hull            : this.hull,
-        position        : this._threeToJSON(this.position), 
-        velocity        : this._threeToJSON(this.velocity),
-        angularVelocity : this._threeToJSON(this.angularVelocity),
+        ownerId         : this.get('ownerId'),
+        type            : this.get('type'),
+        hull            : this.get('hull'),
+        position        : this._threeToJSON(this.get('position')), 
+        velocity        : this._threeToJSON(this.get('velocity')),
+        angularVelocity : this._threeToJSON(this.get('angularVelocity')),
         quaternion      : {
-          x : this.quaternion.x,
-          y : this.quaternion.y,
-          z : this.quaternion.z,
-          w : this.quaternion.w,
+          x : this.get('quaternion').x,
+          y : this.get('quaternion').y,
+          z : this.get('quaternion').z,
+          w : this.get('quaternion').w,
         },
       }
     },
 
     // useful for intiliziting the position of a torpedo
+    // TODO: this should probably by fromJSON()
     setState: function(state) {
-      this.hull             = state.hull;
-      this.position.copy(state.position);
-      this.velocity.copy(state.velocity);
-      this.angularVelocity.copy(state.angularVelocity);
+      this.set({hull: state.hull});
+      this.get('position').copy(state.position);
+      this.get('velocity').copy(state.velocity);
+      this.get('angularVelocity').copy(state.angularVelocity);
 
-      this.quaternion.copy(state.quaternion);
+      this.get('quaternion').copy(state.quaternion);
     },
 
-  }
+  });
 
   return Ship;
 });

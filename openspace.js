@@ -84,15 +84,19 @@ io.sockets.on('connection', function (socket) {
   if (typeof session.shipId === 'undefined' || session.shipId === null) {
     // TODO: This will occasionally error out if the client is still running while the node server get's restarted
     // possible solution is to use the sessionID to identify the ship
+    //
+    // TODO: This will CRASH if the ship is destroyed and the client tries to reconnect
 
     // first time here? get yer'self a ship!
-    ship = new Ship(
-      'ship',
-      Math.random() * 1000 - 500,  
-      Math.random() * 1000 - 500,  
-      Math.random() * 1000 - 500
-    );
-    ship.id = ++shipCounter;
+    ship = new Ship({
+      type: 'ship',
+      position: new THREE.Vector3(
+        Math.random() * 1000 - 500,  
+        Math.random() * 1000 - 500,  
+        Math.random() * 1000 - 500
+      )
+    });
+    ship.id = ++shipCounter; // TODO: this should use another method and work with Backbone
 
     session.shipId = ship.id;
     session.save();
@@ -104,7 +108,7 @@ io.sockets.on('connection', function (socket) {
   }
 
   console.log(' [*] Client connection, sid: ' + session.id + ' shipId: ' + session.shipId)
-  socket.emit('openspace.welcome', {msg: 'Welcome to OpenSpace', ship: ship, world: world.getWorldState()});
+  socket.emit('openspace.welcome', {msg: 'Welcome to OpenSpace', ship: ship.getState(), world: world.getWorldState()});
   socket.broadcast.emit('openspace.new.ship', {msg: 'Ship detected', ship: ship.getState()}); // tell everyone (but us) that we arrived
 
   socket.on('ship.drive', function(data) {
@@ -117,41 +121,41 @@ io.sockets.on('connection', function (socket) {
 
   socket.on('torpedo.fire', function(data, fn) {
     // TODO: it would be great if this were integrated into the ship object
-    if (ship.torpedoInventory > 0){
-    var torpedo = new Ship('torpedo');
-    torpedo.id = ++shipCounter;
-    torpedo.setState(ship.getState());
-    torpedo.ownerId = ship.id; // set a reference to the owning ship
-    torpedo.drive(1);
-    world.addObject(torpedo);
-    if (_.isFunction(fn)) {
-      fn({status: 'success', msg: 'Torpedo fired', id: torpedo.id});
-      ship.torpedoInventory -= 1;
-    };
-    socket.broadcast.emit('openspace.new.torpedo', { msg: 'Torpedo detected', ship: ship.getState(), torpedo: torpedo.getState()}); // the everyone (but us) that we attack!
-    }});
+    if (ship.hasTorpedoes()){
+      var torpedo = new Ship({type: 'torpedo'});
+      torpedo.id = ++shipCounter;
+      torpedo.setState(ship.getState());
+      torpedo.set({ownerId: ship.id}); // set a reference to the owning ship
+      torpedo.drive(1);
+      world.addObject(torpedo);
+      if (_.isFunction(fn)) {
+        fn({status: 'success', msg: 'Torpedo fired', id: torpedo.id});
+        ship.decTorpedoes();
+      };
+      socket.broadcast.emit('openspace.new.torpedo', { msg: 'Torpedo detected', ship: ship.getState(), torpedo: torpedo.getState()}); // the everyone (but us) that we attack!
+      console.log(' [-] Torpedo launched. torpedoId: ', torpedo.id, '   owner: ', torpedo.get('ownerId'));
+    }
+  });
 
   socket.on('torpedo.drive', function(data) {
-    torpedo = _.find(ship.torpedoes, function(torpedo) { return torpedo.id == data.torpedoId });
+    torpedo = _.find(ship.get('torpedoes'), function(torpedo) { return torpedo.id == dataedoId });
     if (torpedo) {
       torpedo.drive(0.1);
     }
   });
 
   socket.on('torpedo.detonate', function(data) {
-    detonated = _.find(ship.torpedoes, function(torpedo) { return torpedo.id == data.torpedoId });
+    detonated = _.find(ship.get('torpedoes'), function(torpedo) { return torpedo.id == data.torpedoId });
     console.log(' [x] Detonated torpedoId: ', detonated.id);
     if (detonated) {
       world.destroyObject(detonated);
       // calc damage radius
-      var pos = detonated.position;
-      var dVector = new THREE.Vector3(pos.x, pos.y, pos.z);
-      console.log(dVector);
+      var dVector = detonated.get('position');
       _.each(world.objects, function(obj) {
         obj.damage(200000/Math.pow(obj.distanceTo(dVector),2));
-        if (obj.hull <= 0){
+        if (obj.get('hull') <= 0){
           world.destroyObject(obj);
-          if (obj.type == 'ship') {
+          if (obj.get('type') == 'ship') {
             io.sockets.emit('openspace.destroy.ship', { msg: 'Ship destroyed', ship: obj.getState()})
           }
         };

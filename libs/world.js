@@ -18,9 +18,10 @@ define(['underscore'], function(_) {
     addObject: function(obj) {
       this.objects.push(obj); // push to the world list
 
-      if (obj.type == 'torpedo') { // push to the ship list if torpedo
-        var ship = this.findObjectById(obj.ownerId);
-        ship.torpedoes.push(obj);
+      // TODO: should this torpedo adding be here or in the ship code?
+      if (obj.get('type') == 'torpedo') { // push to the ship list if torpedo
+        var ship = this.findObjectById(obj.get('ownerId'));
+        ship.get('torpedoes').push(obj);
       }
     },
 
@@ -28,8 +29,8 @@ define(['underscore'], function(_) {
       // remove the obj from the world list
       var newObjects = _.reject(this.objects, function(o) { return o.id == obj.id; });
     
-      if (obj.type == 'torpedo') { // remove from the ships torpedo list
-        var ship = this.findObjectById(obj.ownerId);
+      if (obj.get('type') == 'torpedo') { // remove from the ships torpedo list
+        var ship = this.findObjectById(obj.get('ownerId'));
         ship.destroyTorpedo(obj);
       }
       this.objects = newObjects;
@@ -48,7 +49,7 @@ define(['underscore'], function(_) {
       var torpStates = [];
       _.each(this.objects, function(object) {
         object.animate();
-        if (object.type == 'ship') {
+        if (object.get('type') == 'ship') {
           shipStates.push(object.getState());
         } else {
           torpStates.push(object.getState());  
