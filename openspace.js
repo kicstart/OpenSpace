@@ -1,4 +1,6 @@
-var express       = require('express'),
+var 
+    requirejs     = require('requirejs'),
+    express       = require('express'),
     connect       = require('connect'),
     sessionStore  = new express.session.MemoryStore(),
     _             = require('underscore')._; // underscore saves much headache
@@ -6,7 +8,12 @@ var express       = require('express'),
 var app = express.createServer(),
     io = require('socket.io').listen(app);
 
-var THREE = require('./libs/three.js');
+requirejs.config({
+  nodeRequire:  require,
+});
+
+var THREE = requirejs('libs/three');
+console.log(THREE);
 
 var OpenSpace = require('./libs/ship.js');
 
