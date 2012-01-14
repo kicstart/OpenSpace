@@ -1,9 +1,10 @@
 define([
   'backbone', 
   'underscore', 
-  'three',
-  'model/vessel'
-], function(Backbone, _, THREE, Vessel){
+  'model/vessel',
+  'collection/torpedoes',
+  'model/torpedo',
+], function(Backbone, _, Vessel, Torpedoes, Torpedo){
 
   var Ship = Vessel.extend({
     defaults: {
@@ -25,7 +26,7 @@ define([
     },
 
     fireTorpedo: function() {
-      var torpedo = new Ship({type: 'torpedo'});
+      var torpedo = new Torpedo();
       torpedo.setState(this.getState());
       torpedo.set({ownerId: this.id}); // set a reference to the owning ship
       torpedo.drive(1);
