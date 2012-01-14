@@ -10,15 +10,13 @@ define([
     defaults: {
       type:             'ship',
       hull:             800,
-      torpedoInventory: 20,
+      torpedoInventory: 20, // TODO: Torpedoes might be useful as a preset collection of torpedoes that literally "launch"
     },
 
     //TODO: Should we store the THREE objects in the attributes hash, or directly on the object?
     initialize: function(options) {
       Vessel.prototype.initialize.call(this, options);
-      this.set({
-        'torpedoes': new Array(),
-      }, {silent: true})
+      this.torpedoes = new Torpedoes();
     },
 
     hasTorpedoes: function() {
@@ -42,7 +40,7 @@ define([
     destroyTorpedo: function (torpedo) {
       if (this.type != 'ship') return;
 
-      this.torpedos = _.reject(this.torpedos, function(t) { return t.id == torpedo.id });
+      this.torpedoes.remove(torpedo.id);
     },
 
   });

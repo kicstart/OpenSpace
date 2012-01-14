@@ -146,14 +146,14 @@ io.sockets.on('connection', function (socket) {
   });
 
   socket.on('torpedo.drive', function(data) {
-    torpedo = _.find(ship.get('torpedoes'), function(torpedo) { return torpedo.id == data.Id });
+    torpedo = ship.torpedoes.get(data.id);
     if (torpedo) {
       torpedo.drive(0.1);
     }
   });
 
   socket.on('torpedo.detonate', function(data) {
-    var detonated = _.find(ship.get('torpedoes'), function(torpedo) { return torpedo.id == data.torpedoId });
+    var detonated = ship.torpedoes.get(data.torpedoId);
     console.log(' [x] Detonated torpedoId: ', detonated.id);
     if (detonated) {
       world.destroyObject(detonated);

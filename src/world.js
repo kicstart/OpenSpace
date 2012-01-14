@@ -21,7 +21,7 @@ define(['underscore', 'collection/ships', 'model/ship'], function(_, Ships, Ship
       // TODO: should this torpedo adding be here or in the ship code?
       if (obj.get('type') == 'torpedo') { // push to the ship list if torpedo
         var ship = this.objects.get(obj.get('ownerId'));
-        ship.get('torpedoes').push(obj);
+        ship.torpedoes.add(obj);
       }
     },
 
