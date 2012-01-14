@@ -94,14 +94,13 @@ io.sockets.on('connection', function (socket) {
     // TODO: This will CRASH if the ship is destroyed and the client tries to reconnect
 
     // first time here? get yer'self a ship!
-    ship = new Ship({
-      type: 'ship',
-      position: new THREE.Vector3(
+    ship = new Ship();
+    ship.set({position: new THREE.Vector3(
         Math.random() * 1000 - 500,  
         Math.random() * 1000 - 500,  
         Math.random() * 1000 - 500
       )
-    });
+    }, {silent: true});
 
     session.shipId = ship.id;
     session.save();
