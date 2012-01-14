@@ -154,7 +154,7 @@ io.sockets.on('connection', function (socket) {
 
   socket.on('torpedo.detonate', function(data) {
     var detonated = _.find(ship.get('torpedoes'), function(torpedo) { return torpedo.id == data.torpedoId });
-    console.log(' [x] Detonated torpedoId: ', detonated, data);
+    console.log(' [x] Detonated torpedoId: ', detonated.id);
     if (detonated) {
       world.destroyObject(detonated);
       // calc damage radius
