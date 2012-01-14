@@ -1,9 +1,10 @@
 define([
   'backbone', 
   'underscore', 
+  'collection/vessels',
   'model/ship'
-], function(Backbone, _, Ship) {
-  var Ships = Backbone.Collection.extend({
+], function(Backbone, _, Vessels, Ship) {
+  var Ships = Vessels.extend({
     model: Ship,
   });
 
