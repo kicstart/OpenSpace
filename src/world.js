@@ -1,6 +1,6 @@
-define(['underscore'], function(_) {
+define(['underscore', 'collection/ships', 'model/ship'], function(_, Ships, Ship) {
   var World = function() {
-    this.objects = new Array();
+    this.objects = new Ships();
     this.gameTime = 33;
   }
 
@@ -12,28 +12,27 @@ define(['underscore'], function(_) {
     },
 
     findObjectById: function(id) {
-      return _.find(this.objects, function(object) { return object.id == id });
+      return this.objects.get(id);
     },
 
     addObject: function(obj) {
-      this.objects.push(obj); // push to the world list
+      this.objects.add(obj); // push to the world list
 
       // TODO: should this torpedo adding be here or in the ship code?
       if (obj.get('type') == 'torpedo') { // push to the ship list if torpedo
-        var ship = this.findObjectById(obj.get('ownerId'));
+        var ship = this.objects.get(obj.get('ownerId'));
         ship.get('torpedoes').push(obj);
       }
     },
 
     destroyObject: function(obj) {
-      // remove the obj from the world list
-      var newObjects = _.reject(this.objects, function(o) { return o.id == obj.id; });
     
       if (obj.get('type') == 'torpedo') { // remove from the ships torpedo list
-        var ship = this.findObjectById(obj.get('ownerId'));
+        var ship = this.objects.get(obj.get('ownerId'));
         ship.destroyTorpedo(obj);
       }
-      this.objects = newObjects;
+
+      this.objects.remove(obj);
 
     },
 
@@ -47,7 +46,7 @@ define(['underscore'], function(_) {
       // create an array of all the objects
       var shipStates = [];
       var torpStates = [];
-      _.each(this.objects, function(object) {
+      this.objects.each(function(object) {
         object.animate();
         if (object.get('type') == 'ship') {
           shipStates.push(object.getState());
