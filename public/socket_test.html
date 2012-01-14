@@ -112,11 +112,11 @@
         })
 
         $('#boom').click(function() {
-          socket.emit('torpedo.detonate', {torpedoId: $('input[name=boomTorpedo]').val() * 1});
+          socket.emit('torpedo.detonate', {torpedoId: $('input[name=boomTorpedo]').val()});
         });
 
         $('#driveTorpedo').click(function() {
-          socket.emit('torpedo.drive', {torpedoId: $('input[name=driveTorpedo]').val() * 1});
+          socket.emit('torpedo.drive', {torpedoId: $('input[name=driveTorpedo]').val()});
         });
 
 

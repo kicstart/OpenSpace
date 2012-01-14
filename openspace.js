@@ -102,7 +102,6 @@ io.sockets.on('connection', function (socket) {
         Math.random() * 1000 - 500
       )
     });
-    ship.id = ++shipCounter; // TODO: this should use another method and work with Backbone
 
     session.shipId = ship.id;
     session.save();
@@ -126,33 +125,36 @@ io.sockets.on('connection', function (socket) {
   });
 
   socket.on('torpedo.fire', function(data, fn) {
-    // TODO: it would be great if this were integrated into the ship object
-    if (ship.hasTorpedoes()){
-      var torpedo = new Ship({type: 'torpedo'});
-      torpedo.id = ++shipCounter;
-      torpedo.setState(ship.getState());
-      torpedo.set({ownerId: ship.id}); // set a reference to the owning ship
-      torpedo.drive(1);
+    // create an empty function so we can always call something
+    if (!_.isFunction(fn))
+      fn = function(arg) {};
+
+    if (!ship.hasTorpedoes()) {
+      fn({status: 'failure', msg: 'Insufficient torpedo inventory'});
+      return;
+    }
+
+    var torpedo = ship.fireTorpedo();
+    if (torpedo) {
       world.addObject(torpedo);
-      if (_.isFunction(fn)) {
-        fn({status: 'success', msg: 'Torpedo fired', id: torpedo.id});
-        ship.decTorpedoes();
-      };
-      socket.broadcast.emit('openspace.new.torpedo', { msg: 'Torpedo detected', ship: ship.getState(), torpedo: torpedo.getState()}); // the everyone (but us) that we attack!
+      socket.broadcast.emit('openspace.new.torpedo', { msg: 'Torpedo detected', ship: ship.getState(), torpedo: torpedo.getState()}); 
+      fn({status: 'success', msg: 'Torpedo fired', id: torpedo.id});
       console.log(' [-] Torpedo launched. torpedoId: ', torpedo.id, '   owner: ', torpedo.get('ownerId'));
+    } else {
+      fn({status: 'failure', msg: 'Unknown torpedo error'});
     }
   });
 
   socket.on('torpedo.drive', function(data) {
-    torpedo = _.find(ship.get('torpedoes'), function(torpedo) { return torpedo.id == dataedoId });
+    torpedo = _.find(ship.get('torpedoes'), function(torpedo) { return torpedo.id == data.Id });
     if (torpedo) {
       torpedo.drive(0.1);
     }
   });
 
   socket.on('torpedo.detonate', function(data) {
-    detonated = _.find(ship.get('torpedoes'), function(torpedo) { return torpedo.id == data.torpedoId });
-    console.log(' [x] Detonated torpedoId: ', detonated.id);
+    var detonated = _.find(ship.get('torpedoes'), function(torpedo) { return torpedo.id == data.torpedoId });
+    console.log(' [x] Detonated torpedoId: ', detonated, data);
     if (detonated) {
       world.destroyObject(detonated);
       // calc damage radius
