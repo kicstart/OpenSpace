@@ -3,7 +3,7 @@
   <head>
     <title>Socket test</title>
 
-    <script src="//ajax.googleapis.com/ajax/libs/jquery/1.7.1/jquery.min.js"></script>
+    <script src="/js/jquery-1.7.1.min.js"></script>
     <script src="/socket.io/socket.io.js"></script>
     <script src="/js/vendors/underscore-min.js"></script>
 
@@ -24,6 +24,7 @@
             + ' ang.y: ' + ship.angularVelocity.y
             + ' ang.z: ' + ship.angularVelocity.z
             + ' <br>';
+            console.log(ship);
       }
 
       function updateWorld(world) {
@@ -112,11 +113,11 @@
         })
 
         $('#boom').click(function() {
-          socket.emit('torpedo.detonate', {torpedoId: $('input[name=boomTorpedo]').val() * 1});
+          socket.emit('torpedo.detonate', {torpedoId: $('input[name=boomTorpedo]').val()});
         });
 
         $('#driveTorpedo').click(function() {
-          socket.emit('torpedo.drive', {torpedoId: $('input[name=driveTorpedo]').val() * 1});
+          socket.emit('torpedo.drive', {torpedoId: $('input[name=driveTorpedo]').val()});
         });
 
 
