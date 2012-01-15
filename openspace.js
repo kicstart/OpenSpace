@@ -170,7 +170,7 @@ io.sockets.on('connection', function (socket) {
   });
 
   socket.on('ship.destruct', function(message, fn) {
-    world.destroyObject(ship);
+    ship.selfDestruct();
     ship = null;
     session.shipId = null;
     session.save();

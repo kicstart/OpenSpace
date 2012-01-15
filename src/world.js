@@ -14,7 +14,7 @@ define([
       this.objects.bind('destroyed', this.onDestroyObject, this);
       this.objects.bind('detonation', this.onDetonation, this);
       this.objects.bind('launchTorpedo', this.addObject, this);
-
+      this.objects.bind('selfDestruct', this.removeObject, this);
     },
 
     startLoop: function() {
@@ -23,6 +23,10 @@ define([
 
     addObject: function(obj) {
       this.objects.add(obj); // push to the world list
+    },
+
+    removeObject: function(obj) {
+      this.objects.remove(obj);
     },
 
     onDetonation: function(detonated) {

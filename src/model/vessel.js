@@ -54,6 +54,11 @@ define([
       }
     },
 
+    selfDestruct: function() {
+      this.set({hull: 0});
+      this.trigger('selfDestruct', this);
+    },
+
     thrust: function(type) {
       switch (type) {
         case 'noseDown':
