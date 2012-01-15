@@ -123,10 +123,9 @@ io.sockets.on('connection', function (socket) {
     session.shipId = ship.id;
     session.save();
     world.addObject(ship);
-    newShip = true; // so we can tell the world about us
   } else {
     // otherwise find the ship in the ships array
-    ship = world.findObjectById(session.shipId);
+    ship = world.objects.get(session.shipId);
   }
 
   console.log(' [*] Client connection, sid: ' + session.id + ' shipId: ' + session.shipId)

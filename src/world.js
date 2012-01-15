@@ -21,10 +21,6 @@ define([
       setInterval(_.bind(this.gameLoop, this), this.get('gameTime'));
     },
 
-    findObjectById: function(id) {
-      return this.objects.get(id);
-    },
-
     addObject: function(obj) {
       this.objects.add(obj); // push to the world list
     },
