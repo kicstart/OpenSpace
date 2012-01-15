@@ -49,9 +49,9 @@ define(['underscore', 'collection/ships', 'model/ship'], function(_, Ships, Ship
       this.objects.each(function(object) {
         object.animate();
         if (object.get('type') == 'ship') {
-          shipStates.push(object.getState());
+          shipStates.push(object.toJSON());
         } else {
-          torpStates.push(object.getState());  
+          torpStates.push(object.toJSON());  
         }
       });
 

@@ -14,39 +14,37 @@ define([
     initialize: function(options) {
       this.id = this.cid; 
 
-      this.set({
-        'position':         new THREE.Vector3(),
-        'velocity':         new THREE.Vector3(),
-        'angularVelocity':  new THREE.Vector3(),
-        'scale':            new THREE.Vector3(),
-        'quaternion':       THREE.quaternionFromYawPitchRoll(0,0,0),
-        'matrix':           new THREE.Matrix4(),
-      }, {silent: true});
+      this.position =         new THREE.Vector3();
+      this.velocity =         new THREE.Vector3();
+      this.angularVelocity =  new THREE.Vector3();
+      this.scale =            new THREE.Vector3();
+      this.quaternion =       THREE.quaternionFromYawPitchRoll(0,0,0);
+      this.matrix =           new THREE.Matrix4();
     },
 
     animate: function() {
-      this.get('position').addSelf(this.get('velocity'));
+      this.position.addSelf(this.velocity);
       
       var yaw, pitch, roll;
       
-      yaw   = this.get('angularVelocity').z;
-      pitch = this.get('angularVelocity').y;
-      roll  = this.get('angularVelocity').x;
-      this.get('quaternion').multiply(this.get('quaternion'), THREE.quaternionFromYawPitchRoll(yaw, pitch, roll));
+      yaw   = this.angularVelocity.z;
+      pitch = this.angularVelocity.y;
+      roll  = this.angularVelocity.x;
+      this.quaternion.multiply(this.quaternion, THREE.quaternionFromYawPitchRoll(yaw, pitch, roll));
     },
 
     drive: function(impulse) {
       impulse = impulse || 0.001;
 
-      this.get('matrix').setPosition(this.get('position'));
-      this.get('matrix').setRotationFromQuaternion(this.get('quaternion'));
-      var direction = this.get('matrix').getColumnZ();
+      this.matrix.setPosition(this.position);
+      this.matrix.setRotationFromQuaternion(this.quaternion);
+      var direction = this.matrix.getColumnZ();
       direction.setLength(impulse);  // impulse value, part of ship-specific properties?
-      this.get('velocity').addSelf(direction);
+      this.velocity.addSelf(direction);
     },
 
     distanceTo: function(v) {
-      return this.get('position').distanceTo(v);
+      return this.position.distanceTo(v);
     },
 
     damage: function(d) {
@@ -56,22 +54,22 @@ define([
     thrust: function(type) {
       switch (type) {
         case 'noseDown':
-          this.get('angularVelocity').y += 0.0001;
+          this.angularVelocity.y += 0.0001;
           break;
         case 'noseUp':
-          this.get('angularVelocity').y -= 0.0001;
+          this.angularVelocity.y -= 0.0001;
           break;
         case 'rollLeft':
-          this.get('angularVelocity').z += 0.0001;
+          this.angularVelocity.z += 0.0001;
           break;
         case 'rollRight':
-          this.get('angularVelocity').z -= 0.0001;
+          this.angularVelocity.z -= 0.0001;
           break;
         case 'pivotLeft':
-          this.get('angularVelocity').x += 0.0001;
+          this.angularVelocity.x += 0.0001;
           break;
         case 'pivotRight':
-          this.get('angularVelocity').x -= 0.0001;
+          this.angularVelocity.x -= 0.0001;
           break;
       }
     },
@@ -86,42 +84,35 @@ define([
     },
 
     reset: function() {
-      this.get('position').set(0,0,0);
-      this.get('velocity').set(0,0,0);
-      this.get('angularVelocity').set(0,0,0);
-      this.get('quaternion') = THREE.quaternionFromYawPitchRoll(0, 0, 0); 
+      this.position.set(0,0,0);
+      this.velocity.set(0,0,0);
+      this.angularVelocity.set(0,0,0);
+      this.quaternion = THREE.quaternionFromYawPitchRoll(0, 0, 0); 
     },
 
-    // TODO: This should probably be toJSON()
-    getState: function() {
-      return {
-        id              : this.id,
-        ownerId         : this.get('ownerId'),
-        type            : this.get('type'),
-        hull            : this.get('hull'),
-        position        : this._threeToJSON(this.get('position')), 
-        velocity        : this._threeToJSON(this.get('velocity')),
-        angularVelocity : this._threeToJSON(this.get('angularVelocity')),
-        quaternion      : {
-          x : this.get('quaternion').x,
-          y : this.get('quaternion').y,
-          z : this.get('quaternion').z,
-          w : this.get('quaternion').w,
-        },
+    toJSON: function() {
+      var json = Backbone.Model.prototype.toJSON.call(this);
+      json.id = this.id || this.cid;
+      json.position = this._threeToJSON(this.position);
+      json.velocity = this._threeToJSON(this.velocity);
+      json.angularVelocity = this._threeToJSON(this.angularVelocity);
+      json.quaternion = {
+        x : this.quaternion.x,
+        y : this.quaternion.y,
+        z : this.quaternion.z,
+        w : this.quaternion.w,
       }
+
+      return json;
     },
 
-    // useful for intiliziting the position of a torpedo
-    // TODO: this should probably by fromJSON()
-    setState: function(state) {
-      this.set({hull: state.hull});
-      this.get('position').copy(state.position);
-      this.get('velocity').copy(state.velocity);
-      this.get('angularVelocity').copy(state.angularVelocity);
+    setPositionState: function(json) {
+      this.position.copy(json.position);
+      this.velocity.copy(json.velocity);
+      this.angularVelocity.copy(json.angularVelocity);
 
-      this.get('quaternion').copy(state.quaternion);
+      this.quaternion.copy(json.quaternion);
     },
-
   });
 
   return Vessel;

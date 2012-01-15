@@ -95,12 +95,12 @@ io.sockets.on('connection', function (socket) {
 
     // first time here? get yer'self a ship!
     ship = new Ship();
-    ship.set({position: new THREE.Vector3(
-        Math.random() * 1000 - 500,  
-        Math.random() * 1000 - 500,  
-        Math.random() * 1000 - 500
-      )
-    }, {silent: true});
+    ship.position = new THREE.Vector3(
+      Math.random() * 1000 - 500,  
+      Math.random() * 1000 - 500,  
+      Math.random() * 1000 - 500
+    );
+  
 
     session.shipId = ship.id;
     session.save();
@@ -112,8 +112,8 @@ io.sockets.on('connection', function (socket) {
   }
 
   console.log(' [*] Client connection, sid: ' + session.id + ' shipId: ' + session.shipId)
-  socket.emit('openspace.welcome', {msg: 'Welcome to OpenSpace', ship: ship.getState(), world: world.getWorldState()});
-  socket.broadcast.emit('openspace.new.ship', {msg: 'Ship detected', ship: ship.getState()}); // tell everyone (but us) that we arrived
+  socket.emit('openspace.welcome', {msg: 'Welcome to OpenSpace', ship: ship.toJSON(), world: world.getWorldState()});
+  socket.broadcast.emit('openspace.new.ship', {msg: 'Ship detected', ship: ship.toJSON()}); // tell everyone (but us) that we arrived
 
   socket.on('ship.drive', function(data) {
     ship.drive();
@@ -136,9 +136,9 @@ io.sockets.on('connection', function (socket) {
     var torpedo = ship.fireTorpedo();
     if (torpedo) {
       world.addObject(torpedo);
-      socket.broadcast.emit('openspace.new.torpedo', { msg: 'Torpedo detected', ship: ship.getState(), torpedo: torpedo.getState()}); 
+      socket.broadcast.emit('openspace.new.torpedo', { msg: 'Torpedo detected', ship: ship.toJSON(), torpedo: torpedo.toJSON()}); 
       fn({status: 'success', msg: 'Torpedo fired', id: torpedo.id});
-      console.log(' [-] Torpedo launched. torpedoId: ', torpedo.id, '   owner: ', torpedo.get('ownerId'));
+      console.log(' [-] Torpedo launched. id: ', torpedo.id, '   ownerId: ', torpedo.get('ownerId'));
     } else {
       fn({status: 'failure', msg: 'Unknown torpedo error'});
     }
@@ -157,19 +157,19 @@ io.sockets.on('connection', function (socket) {
     if (detonated) {
       world.destroyObject(detonated);
       // calc damage radius
-      var dVector = detonated.get('position');
+      var dVector = detonated.position;
       _.each(world.objects, function(obj) {
         obj.damage(200000/Math.pow(obj.distanceTo(dVector),2));
         if (obj.get('hull') <= 0){
           world.destroyObject(obj);
           if (obj.get('type') == 'ship') {
-            io.sockets.emit('openspace.destroy.ship', { msg: 'Ship destroyed', ship: obj.getState()})
+            io.sockets.emit('openspace.destroy.ship', { msg: 'Ship destroyed', ship: obj.toJSON()})
           }
         };
       });
 
       // remove the torpedo from the world and notify
-      io.sockets.emit('openspace.detonate.torpedo', { msg: 'Torpedo detonated', torpedo: detonated.getState()});
+      io.sockets.emit('openspace.detonate.torpedo', { msg: 'Torpedo detonated', torpedo: detonated.toJSON()});
       detonated = null;
     }
   });
