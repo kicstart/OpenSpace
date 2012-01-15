@@ -28,6 +28,7 @@ define([
       torpedo.setPositionState(this.toJSON());
       torpedo.set({ownerId: this.id}); // set a reference to the owning ship
       torpedo.drive(1);
+      this.torpedoes.add(torpedo);
       this.decTorpedoes();
     
       return torpedo;
