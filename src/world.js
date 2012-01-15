@@ -28,6 +28,7 @@ define([
     detonation: function(detonated) {
       if (detonated == null) return;
 
+      this.trigger('detonation', detonated);
       this.objects.remove(detonated);
 
       // calc damage radius

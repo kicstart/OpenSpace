@@ -15,14 +15,18 @@ define([
 
     initialize: function(options) {
       Vessel.prototype.initialize.call(this, options);
-      if (this.get('chainReact')) {
-        this.bind('destroyed', this.detonate, this);
-      }
+      this.bind('destroyed', this.destroyed, this);
     },
 
     detonate: function() {
       this.trigger('detonation', this);
     }, 
+
+    destroyed: function() {
+      if (this.get('chainReact')) {
+        this.detonate();
+      }
+    },
 
   });
 
