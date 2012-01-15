@@ -152,7 +152,8 @@ io.sockets.on('connection', function (socket) {
   });
 
   socket.on('torpedo.detonate', function(data) {
-    var detonated = ship.torpedoes.get(data.torpedoId);
+    var detonated = ship.detonate(data.torpedoId);
+
     console.log(' [x] Detonated torpedoId: ', detonated.id);
     if (detonated) {
       world.destroyObject(detonated);

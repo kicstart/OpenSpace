@@ -1,6 +1,6 @@
-define(['underscore', 'collection/ships', 'model/ship'], function(_, Ships, Ship) {
+define(['underscore', 'collection/vessels', 'model/ship'], function(_, Vessels, Ship) {
   var World = function() {
-    this.objects = new Ships();
+    this.objects = new Vessels();
     this.gameTime = 33;
   }
 

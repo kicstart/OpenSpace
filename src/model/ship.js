@@ -17,6 +17,8 @@ define([
     initialize: function(options) {
       Vessel.prototype.initialize.call(this, options);
       this.torpedoes = new Torpedoes();
+      this.torpedoes.bind('detonation', this.removeTorpedo, this); // TODO: should these be in the collection?
+      this.torpedoes.bind('destroyed', this.removeTorpedo, this);
     },
 
     hasTorpedoes: function() {
@@ -31,6 +33,19 @@ define([
       this.torpedoes.add(torpedo);
       this.decTorpedoes();
     
+      return torpedo;
+    },
+
+    removeTorpedo: function(torpedo) {
+      this.torpedoes.remove(torpedo);
+    },
+
+    detonate: function(id) {
+      var search = id.id !== null ? id.id : id;
+      var torpedo = this.torpedoes.get(id);
+      if (torpedo) {
+        torpedo.detonate();
+      }
       return torpedo;
     },
 

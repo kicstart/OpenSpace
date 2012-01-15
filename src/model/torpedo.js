@@ -15,6 +15,10 @@ define([
       Vessel.prototype.initialize.call(this, options);
     },
 
+    detonate: function() {
+      this.trigger('detonation', this);
+    }, 
+
   });
 
   return Torpedo;

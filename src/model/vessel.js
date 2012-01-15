@@ -49,6 +49,9 @@ define([
 
     damage: function(d) {
       this.hull -= d;
+      if (this.hull <= 0) {
+        this.trigger('destroyed', this);
+      }
     },
 
     thrust: function(type) {
