@@ -48,8 +48,8 @@ define([
     },
 
     damage: function(d) {
-      this.hull -= d;
-      if (this.hull <= 0) {
+      this.set({hull: this.get('hull') - d});
+      if (this.get('hull') <= 0) {
         this.trigger('destroyed', this);
       }
     },

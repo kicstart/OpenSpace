@@ -31,6 +31,7 @@ define([
       torpedo.set({ownerId: this.id}); // set a reference to the owning ship
       torpedo.drive(1);
       this.torpedoes.add(torpedo);
+      this.trigger('launchTorpedo', torpedo);
       this.decTorpedoes();
     
       return torpedo;

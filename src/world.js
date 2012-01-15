@@ -11,6 +11,10 @@ define([
     initialize: function(options) {
       this.objects = new Vessels();
 
+      this.objects.bind('destroyed', this.destroyObject, this);
+      this.objects.bind('detonation', this.detonation, this);
+      this.objects.bind('launchTorpedo', this.addObject, this);
+
     },
 
     startLoop: function() {
@@ -25,15 +29,21 @@ define([
       this.objects.add(obj); // push to the world list
     },
 
+    detonation: function(detonated) {
+      if (detonated == null) return;
+
+      this.objects.remove(detonated);
+
+      // calc damage radius
+      var dVector = detonated.position;
+      this.objects.each(function(obj) {
+        obj.damage(200000/Math.pow(obj.distanceTo(dVector),2));
+        console.log('   [d] Damaging obj:', obj.id, ' hull:' , obj.get('hull'));
+      });
+    },
+
     destroyObject: function(obj) {
-    
-      if (obj.get('type') == 'torpedo') { // remove from the ships torpedo list
-        var ship = this.objects.get(obj.get('ownerId'));
-        ship.destroyTorpedo(obj);
-      }
-
       this.objects.remove(obj);
-
     },
 
     // main game loop should be overridden elsewhere
