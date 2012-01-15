@@ -11,8 +11,8 @@ define([
     initialize: function(options) {
       this.objects = new Vessels();
 
-      this.objects.bind('destroyed', this.destroyObject, this);
-      this.objects.bind('detonation', this.detonation, this);
+      this.objects.bind('destroyed', this.onDestroyObject, this);
+      this.objects.bind('detonation', this.onDetonation, this);
       this.objects.bind('launchTorpedo', this.addObject, this);
 
     },
@@ -25,7 +25,7 @@ define([
       this.objects.add(obj); // push to the world list
     },
 
-    detonation: function(detonated) {
+    onDetonation: function(detonated) {
       if (detonated == null) return;
 
       this.trigger('detonation', detonated);
@@ -39,7 +39,7 @@ define([
       });
     },
 
-    destroyObject: function(obj) {
+    onDestroyObject: function(obj) {
       this.objects.remove(obj);
     },
 
