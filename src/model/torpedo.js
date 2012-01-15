@@ -9,6 +9,7 @@ define([
       ownerId:          null,
       type:             'torpedo',
       hull:             50,
+      yield:            200000,
     },
 
     initialize: function(options) {

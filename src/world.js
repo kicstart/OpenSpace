@@ -33,7 +33,7 @@ define([
       // calc damage radius
       var dVector = detonated.position;
       this.objects.each(function(obj) {
-        obj.damage(200000/Math.pow(obj.distanceTo(dVector),2));
+        obj.damage(detonated.get('yield')/Math.pow(obj.distanceTo(dVector),2));
         console.log('   [d] Damaging obj:', obj.id, ' hull:' , obj.get('hull'));
       });
     },
