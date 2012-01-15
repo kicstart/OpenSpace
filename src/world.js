@@ -1,14 +1,20 @@
-define(['underscore', 'collection/vessels', 'model/ship'], function(_, Vessels, Ship) {
-  var World = function() {
-    this.objects = new Vessels();
-    this.gameTime = 33;
-  }
+define([
+  'backbone',
+  'underscore',
+  'collection/vessels',
+], function(Backbone, _, Vessels) {
+  var World = Backbone.Model.extend({
+    defaults: {
+      gameTime: 33,
+    },
 
-  World.prototype = {
-    constructor: World,  
+    initialize: function(options) {
+      this.objects = new Vessels();
+
+    },
 
     startLoop: function() {
-      setInterval(_.bind(this.gameLoop, this), this.gameTime);
+      setInterval(_.bind(this.gameLoop, this), this.get('gameTime'));
     },
 
     findObjectById: function(id) {
@@ -51,8 +57,7 @@ define(['underscore', 'collection/vessels', 'model/ship'], function(_, Vessels, 
 
       return {ships: shipStates, torpedoes: torpStates};
     }
-  }
- 
+  });
 
   return World;
 });
