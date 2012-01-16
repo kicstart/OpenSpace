@@ -1,13 +1,10 @@
 define(function() {
   THREE = {};
   // TODO: We should probably wrap the individual libraries in AMD definitions so we can require in only the things we need
-  requirejs([
-    'order!vendors/mrdoob/three.js/src/core/Quaternion',
-    'order!vendors/mrdoob/three.js/src/core/Vector3',
-    'order!vendors/mrdoob/three.js/src/core/Matrix3',
-    'order!vendors/mrdoob/three.js/src/core/Matrix4',
-  ]);
-
+  requirejs(['vendors/mrdoob/three.js/src/core/Quaternion']);
+  requirejs(['vendors/mrdoob/three.js/src/core/Vector3']);
+  requirejs(['vendors/mrdoob/three.js/src/core/Matrix3']);
+  requirejs(['vendors/mrdoob/three.js/src/core/Matrix4']);
 
   /**
    * Custom quaternion factory from @KyleYoung
