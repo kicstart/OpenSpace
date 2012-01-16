@@ -15,15 +15,18 @@ require.config({
 require([
   'jquery',
   'collection/vessels',
-  'three',
-], function($, Vessels, THREE) {
+  'model/ship'
+], function($, Vessels, Ship) {
 
   var socket = io.connect('http://'+location.host);
   $(function() {
     var vessels = new Vessels();
+    var ship = null;
     console.log(vessels);
     socket.on('openspace.welcome', function(welcome) {
+      ship = new Ship(welcome.ship);
       console.log('Welcome received', welcome);
+      console.log('MyShip ', ship);
     });
 
     socket.on('openspace.loop', function(world) {

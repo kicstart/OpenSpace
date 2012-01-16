@@ -15,11 +15,40 @@ define([
       this.id = this.cid; 
 
       this.position =         new THREE.Vector3();
+      if (options.position) {
+        this.position.copy(options.position);
+        this.unset('position', {silent: true});
+      }
+
       this.velocity =         new THREE.Vector3();
+      if (options.velocity) {
+        this.velocity.copy(options.velocity);
+        this.unset('velocity', {silent: true});
+      }
+
       this.angularVelocity =  new THREE.Vector3();
+      if (options.angularVelocity) {
+        this.angularVelocity.copy(options.angularVelocity);
+        this.unset('angularVelocity', {silent: true});
+      }
+
       this.scale =            new THREE.Vector3();
+      if (options.scale) {
+        this.scale.copy(options.scale);
+        this.unset('scale', {silent: true});
+      }
+
       this.quaternion =       THREE.quaternionFromYawPitchRoll(0,0,0);
+      if (options.quaternion) {
+        this.quaterion.copy(options.quaternion);
+        this.unset('quaternion', {silent: true});
+      }
+
       this.matrix =           new THREE.Matrix4();
+      if (options.matrix) {
+        this.matrix.copy(options.matrix);
+        this.unset('matrix', {silent: true});
+      }
     },
 
     animate: function() {
