@@ -7,3 +7,9 @@
 [submodule "vendors/mrdoob/three.js"]
 	path = vendors/mrdoob/three.js
 	url = git@github.com:/mrdoob/three.js.git
+[submodule "vendors/jrburke/requirejs"]
+	path = vendors/jrburke/requirejs
+	url = https://github.com/jrburke/requirejs.git
+[submodule "vendors/jrburke/backbone"]
+	path = vendors/jrburke/backbone
+	url = https://github.com/jrburke/backbone.git
