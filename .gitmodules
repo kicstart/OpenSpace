@@ -13,3 +13,6 @@
 [submodule "vendors/jrburke/backbone"]
 	path = vendors/jrburke/backbone
 	url = https://github.com/jrburke/backbone.git
+[submodule "vendors/hevets/jquery"]
+	path = vendors/hevets/jquery
+	url = http://github.com/hevets/jquery.git
