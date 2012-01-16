@@ -3,6 +3,10 @@ require.config({
     'underscore'  :'vendors/underscore',
     'backbone'    :'vendors/backbone',   
     'jquery'      :'vendors/jquery.min',
+    'three'       :'libs/three',
+    'model'       :'model',
+    'collection'  :'collection',
+    'order'       :'vendors/order',
   },
 
   locale: "en_ca",
@@ -10,11 +14,21 @@ require.config({
 
 require([
   'jquery',
-], function($) {
+  'collection/vessels',
+  'three',
+], function($, Vessels, THREE) {
 
   var socket = io.connect('http://'+location.host);
   $(function() {
-    console.log('Loaded');
+    var vessels = new Vessels();
+    console.log(vessels);
+    socket.on('openspace.welcome', function(welcome) {
+      console.log('Welcome received', welcome);
+    });
+
+    socket.on('openspace.loop', function(world) {
+      //console.log(world);
+    });
   });
 
 });

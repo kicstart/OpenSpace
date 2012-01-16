@@ -2,10 +2,10 @@ define(function() {
   THREE = {};
   // TODO: We should probably wrap the individual libraries in AMD definitions so we can require in only the things we need
   requirejs([
-    'vendors/mrdoob/three.js/src/core/Quaternion',
-    'vendors/mrdoob/three.js/src/core/Vector3',
-    'vendors/mrdoob/three.js/src/core/Matrix3',
-    'vendors/mrdoob/three.js/src/core/Matrix4',
+    'order!vendors/mrdoob/three.js/src/core/Quaternion',
+    'order!vendors/mrdoob/three.js/src/core/Vector3',
+    'order!vendors/mrdoob/three.js/src/core/Matrix3',
+    'order!vendors/mrdoob/three.js/src/core/Matrix4',
   ]);
 
 
