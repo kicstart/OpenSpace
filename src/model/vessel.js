@@ -149,6 +149,7 @@ define([
       this.angularVelocity.copy(json.angularVelocity);
 
       this.quaternion.copy(json.quaternion);
+      this.change();
     },
   });
 
