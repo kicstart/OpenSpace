@@ -53,21 +53,25 @@ define([
       console.log('tock');
     },
 
-    getWorldState: function() {
+    animate: function() {
       // create an array of all the objects
-      var shipStates = [];
-      var torpStates = [];
+      var state = [];
       this.objects.each(function(object) {
         object.animate();
-        if (object.get('type') == 'ship') {
-          shipStates.push(object.toJSON());
-        } else {
-          torpStates.push(object.toJSON());  
-        }
+        state.push(object.toJSON());
       });
 
-      return {ships: shipStates, torpedoes: torpStates};
-    }
+      return { vessels: state };
+    },
+
+    getWorldState: function() {
+      var state = [];
+      this.objects.each(function(object) {
+        state.push(object.toJSON());
+      });
+
+      return { vessels: state};
+    },
   });
 
   return World;

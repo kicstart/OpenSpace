@@ -30,13 +30,10 @@
       function updateWorld(world) {
         status = '';
 
-        _.each(world.ships, function(ship) {
+        _.each(world.vessels, function(ship) {
           status += getShipStateString(ship);
         })
 
-        _.each(world.torpedoes, function (torpedo) {
-          status += getShipStateString(torpedo);
-        })
         $('#status').html(status);
       }
 

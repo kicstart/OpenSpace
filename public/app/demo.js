@@ -6,6 +6,7 @@ require.config({
     'three'       :'libs/three',
     'model'       :'model',
     'collection'  :'collection',
+    'text'        :'vendors/text',
   },
 
   locale: "en_ca",
@@ -15,40 +16,44 @@ require([
   'jquery',
   'underscore',
   'collection/vessels',
-  'model/vessel'
-], function($, _, Vessels, Vessel) {
+  'model/vessel',
+  'view/ship',
+], function($, _, Vessels, Vessel, ShipView) {
 
   var socket = io.connect('http://'+location.host);
   $(function() {
     vessels = new Vessels(); // TODO: rescope these
+
     ship = null;
     torpedoes = new Vessels();
+    shipView = null;
     vessels.bind('add', function(vessel) {
       console.log('New ' + vessel.get('type') + ' id: ' + vessel.id);
+      if (vessel.get('ownerId') == ship.id) {
+        torpedoes.add(vessel);
+      }
     });
-    console.log(vessels);
-
-
+    vessels.bind('remove', function(vessel) {
+      console.log('Removed ' + vessel.get('type') + ' id:' + vessel.id);
+      if (vessel.get('ownerId') == ship.id) {
+        torpedoes.remove(vessel.id);
+      }
+    });
 
 
     // Socket message handling
     socket.on('openspace.welcome', function(welcome) {
-      ship = new Vessel(welcome.ship);
       console.log('Welcome to OpenSpace', welcome);
       console.log('MyShip ', ship);
+
+      ship = new Vessel(welcome.ship);
+      shipView = new ShipView({model: ship});
+      $('body').append(shipView.render().el);
     });
 
     socket.on('openspace.loop', function(world) {
       //console.log(world);
-      vessels.addIfNew(world.ships);
-      _.each(world.torpedoes, function(torpedo) {
-        // we each over the torpedoes instead of addIfNew for the entire array
-        // as we need to handle our own torpedoes
-        vessels.addIfNew(torpedo);
-        if (torpedo.ownerId == ship.id) {
-          torpedoes.add(vessels.get(torpedo.id));
-        }
-      });
+      vessels.processFromJSON(world.vessels);
     });
 
 
