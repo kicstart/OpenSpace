@@ -20,9 +20,9 @@ require([
 
   var socket = io.connect('http://'+location.host);
   $(function() {
-    vessels = new Vessels();
-    var ship = null;
-    var torpedoes = new Vessels();
+    vessels = new Vessels(); // TODO: rescope these
+    ship = null;
+    torpedoes = new Vessels();
     vessels.bind('add', function(vessel) {
       console.log('New ' + vessel.get('type') + ' id: ' + vessel.id);
     });
@@ -40,13 +40,13 @@ require([
 
     socket.on('openspace.loop', function(world) {
       //console.log(world);
-      vessels.vesselsFromJSON(world.ships);
+      vessels.addIfNew(world.ships);
       _.each(world.torpedoes, function(torpedo) {
-        // we each over the torpedoes instead of vesselsFromJSON
+        // we each over the torpedoes instead of addIfNew for the entire array
         // as we need to handle our own torpedoes
-        vessels.add(torpedo);
-        if (torpedo.get('ownerId') == ship.id) {
-          torpedoes.add(torpedo);
+        vessels.addIfNew(torpedo);
+        if (torpedo.ownerId == ship.id) {
+          torpedoes.add(vessels.get(torpedo.id));
         }
       });
     });

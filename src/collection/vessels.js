@@ -6,16 +6,33 @@ define([
   var Vessels = Backbone.Collection.extend({
     model: Vessel,
 
-    vesselsFromJSON: function(json) {
-      _.each(json, function(obj) {
-        var vessel = this.get(obj.id);
-        if (vessel) { // vessel already exists
-          vessel.setPositionState(obj);  
-        } else { // vessel does not exist
-          this.add(obj);
-        }
-      }, this);
+    /**
+     * Add a new vessel or array of vessels only if not yet present
+     *
+     * @param Vessel|json|array
+     */
+    addIfNew: function(vessels) {
+      if(_.isArray(vessels)) {
+        _.each(vessels, function(vessel) {
+          this._addIfNew(vessel);
+        }, this);
+      } else {
+        this._addIfNew(vessels);
+      }
+
+      return this;
     },
+
+    /**
+     * Add a single vessel if new
+     *
+     * @param Vessel|json vessel
+     */
+    _addIfNew: function(vessel) {
+      if (!this.get(vessel.id)) {
+        this.add(vessel);
+      }
+    }
   });
 
   return Vessels;

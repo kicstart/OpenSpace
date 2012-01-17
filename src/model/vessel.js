@@ -12,7 +12,8 @@ define([
 
     //TODO: Should we store the THREE objects in the attributes hash, or directly on the object?
     initialize: function(options) {
-      this.id = this.cid; 
+      if (typeof options.id === 'undefined') // set the id to the generated id if not specified
+        this.id = this.cid; 
 
       this.position =         new THREE.Vector3();
       if (options.position) {
