@@ -22,10 +22,9 @@ require([
   $(function() {
     var vessels = new Vessels();
     var ship = null;
-    console.log(vessels);
     socket.on('openspace.welcome', function(welcome) {
       ship = new Ship(welcome.ship);
-      console.log('Welcome received', welcome);
+      console.log('Welcome to OpenSpace', welcome);
       console.log('MyShip ', ship);
     });
 

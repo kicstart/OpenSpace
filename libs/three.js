@@ -1,10 +1,15 @@
 define(function() {
-  THREE = {};
+  THREE = typeof THREE === 'undefined' ? {} : THREE;
+
   // TODO: We should probably wrap the individual libraries in AMD definitions so we can require in only the things we need
-  requirejs(['vendors/mrdoob/three.js/src/core/Quaternion']);
-  requirejs(['vendors/mrdoob/three.js/src/core/Vector3']);
-  requirejs(['vendors/mrdoob/three.js/src/core/Matrix3']);
-  requirejs(['vendors/mrdoob/three.js/src/core/Matrix4']);
+  if (typeof THREE.Quaternion == 'undefined')
+    requirejs(['vendors/mrdoob/three.js/src/core/Quaternion']);
+  if (typeof THREE.Vector3 == 'undefined')
+    requirejs(['vendors/mrdoob/three.js/src/core/Vector3']);
+  if (typeof THREE.Matrix3 == 'undefined')
+    requirejs(['vendors/mrdoob/three.js/src/core/Matrix3']);
+  if (typeof THREE.Matrix4 == 'undefined')
+    requirejs(['vendors/mrdoob/three.js/src/core/Matrix4']);
 
   /**
    * Custom quaternion factory from @KyleYoung
@@ -30,8 +35,6 @@ define(function() {
     
     return q;
   }
-
-
 
   return THREE;
 });

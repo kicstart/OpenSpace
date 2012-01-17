@@ -40,7 +40,7 @@ define([
 
       this.quaternion =       THREE.quaternionFromYawPitchRoll(0,0,0);
       if (options.quaternion) {
-        this.quaterion.copy(options.quaternion);
+        this.quaternion.copy(options.quaternion);
         this.unset('quaternion', {silent: true});
       }
 
