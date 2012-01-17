@@ -14,38 +14,17 @@ define([
           this.remove(vessel.id);
       }, this);
   
-      // now add new vessels
-      this.addIfNew(json);
+      // now add new vessels and update other vessels
+      _.each(json, function(obj) {
+        var found = this.get(obj.id);
+        if (found) {
+          found.setPositionState(obj);
+        } else {
+          this.add(obj);
+        }
+      }, this);
     
     },
-
-    /**
-     * Add a new vessel or array of vessels only if not yet present
-     *
-     * @param Vessel|json|array
-     */
-    addIfNew: function(vessels) {
-      if(_.isArray(vessels)) {
-        _.each(vessels, function(vessel) {
-          this._addIfNew(vessel);
-        }, this);
-      } else {
-        this._addIfNew(vessels);
-      }
-
-      return this;
-    },
-
-    /**
-     * Add a single vessel if new
-     *
-     * @param Vessel|json vessel
-     */
-    _addIfNew: function(vessel) {
-      if (!this.get(vessel.id)) {
-        this.add(vessel);
-      }
-    }
   });
 
   return Vessels;

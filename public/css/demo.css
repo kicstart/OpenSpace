@@ -1,0 +1,4 @@
+body { font-size: 10px; };
+.ship h2 { display: inline-block; margin: 0;}
+.ship .info, .ship .position { display: block; float: left; width: 100px; }
+

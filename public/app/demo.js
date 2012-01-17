@@ -32,6 +32,12 @@ require([
       if (vessel.get('ownerId') == ship.id) {
         torpedoes.add(vessel);
       }
+      // reset ship reference to point at vessels ship reference
+      if (vessel.id == ship.id) {
+        ship = vessel;
+        shipView = new ShipView({model: ship});
+        $('body').append(shipView.render().el);
+      }
     });
     vessels.bind('remove', function(vessel) {
       console.log('Removed ' + vessel.get('type') + ' id:' + vessel.id);
@@ -47,8 +53,6 @@ require([
       console.log('MyShip ', ship);
 
       ship = new Vessel(welcome.ship);
-      shipView = new ShipView({model: ship});
-      $('body').append(shipView.render().el);
     });
 
     socket.on('openspace.loop', function(world) {

@@ -14,7 +14,7 @@ define([
     template: shipTemplate,
 
     initialize: function() {
-    
+      this.model.bind('change', this.render, this); 
     },
 
     render: function() {
