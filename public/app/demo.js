@@ -35,7 +35,7 @@ require([
       // reset ship reference to point at vessels ship reference
       if (vessel.id == ship.id) {
         ship = vessel;
-        shipView = new ShipView({model: ship, socket: socket});
+        shipView = new ShipView({model: ship, torpedoes: torpedoes, socket: socket});
         $('body').append(shipView.render().el);
       }
     });

@@ -3,8 +3,9 @@ define([
   'underscore',
   'jquery',
   'model/vessel',
+  'view/torpedo',
   'text!template/ship.tpl.html',
-], function(Backbone, $, Ship, shipTemplate) {
+], function(Backbone, _, $, Ship, TorpedoView, shipTemplate) {
   
   var ShipView = Backbone.View.extend({
   
@@ -14,21 +15,29 @@ define([
     template: shipTemplate,
 
     events: {
-      'click .thrust':      'thrust',
-      'click .drive':       'drive',
-      //'click .fire':        'fire',
+      'click .ship-controls .thrust':      'thrust',
+      'click .ship-controls .drive':       'drive',
+      'click .ship-controls .fire':        'fire',
     },
 
     initialize: function(options) {
       _.bindAll(this); // bind all functions on this so this means this :)
 
+      this.torpedoViews = [];
       this.socket = options.socket;
+      this.torpedoes = options.torpedoes;
+      console.log('torps', this.torpedoes);
       this.model.bind('change', this.update, this); 
+      this.torpedoes.bind('add', this.addTorpedo, this);
+      this.torpedoes.bind('remove', this.removeTorpedo, this);
     },
 
     render: function() {
-      $(this.el).html(_.template(shipTemplate, this.model.toJSON()));
+      $(this.el).html(_.template(this.template, this.model.toJSON()));
 
+      this.torpedoes.each(function(torpedo) {
+        this.addTorpedo(torpedo);
+      }, this);
       return this;
     },
 
@@ -57,6 +66,24 @@ define([
 
     drive: function() {
       this.socket.emit('ship.drive', {shipId: this.model.id});
+    },
+
+    fire: function() {
+      this.socket.emit('torpedo.fire', {shipId: this.model.id}); //function(torpedo){
+            //$('#message').append('<div>I fired a torpedo ' + torpedo.id + '</div>');
+          //});
+
+    },
+
+    addTorpedo: function(torpedo) {
+      var torpedoView = new TorpedoView({model: torpedo, socket: this.socket});
+      this.torpedoViews[torpedo.id] = torpedoView;
+
+      this.$('.torpedoes').append(torpedoView.render().el);
+    },
+
+    removeTorpedo: function(torpedo) {
+      this.torpedoViews[torpedo.id].remove();
     },
   });
 
