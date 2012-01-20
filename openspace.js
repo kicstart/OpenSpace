@@ -10,11 +10,17 @@ var app = express.createServer(),
 
 requirejs.config({
   nodeRequire:  require,
+  paths: {
+    'three':        'libs/three',
+    'model':        'src/model',
+    'collection':   'src/collection',
+    'world':        'src/world',
+  },
 });
 
-var THREE = requirejs('libs/three');
-var Ship = requirejs('libs/ship');
-var World = requirejs('libs/world');
+var THREE = requirejs('three');
+var Ship = requirejs('model/ship');
+var World = requirejs('world');
 
 io.configure(function() {
   io.set('log level', 1);
@@ -30,7 +36,27 @@ app.configure(function() {
   app.use(express.static(__dirname + '/public'));
 });
 
+// Setup the world and the world communication
 var world = new World();
+world.bind('destroyed', function(obj) {
+  if (obj.get('type') == 'ship') {
+    io.sockets.emit('openspace.destroy.ship', { msg: 'Ship destroyed', ship: obj.toJSON()})
+  }
+});
+world.bind('detonation', function(detonated) {
+  console.log(' [x] Detonated torpedoId: ', detonated.id);
+  io.sockets.emit('openspace.detonate.torpedo', { msg: 'Torpedo detonated', torpedo: detonated.toJSON()});
+});
+world.objects.bind('add', function(obj) {
+  if (obj.get('type') == 'torpedo') {
+    io.sockets.emit('openspace.new.torpedo', { msg: 'Torpedo detected', torpedo: obj.toJSON()}); 
+    console.log(' [+] Torpedo launched. id: ', obj.id, '   ownerId: ', obj.get('ownerId'));
+  } else {
+    io.sockets.emit('openspace.new.ship', {msg: 'Ship detected', ship: obj.toJSON()});
+    console.log(' [+] Ship launched id: ', obj.id);
+  }
+});
+
 // set the gameLoop update function
 world.gameLoop = function() {
   io.sockets.emit('openspace.loop', world.getWorldState());
@@ -61,8 +87,6 @@ io.set('authorization', function (data, ack) {
   }
 });
 
-var shipCounter = 0; // crude ship id generator
-
 io.sockets.on('connection', function (socket) {
   var session = socket.handshake.session; // the session variable for this connection/user;
   var sessionIntervalId = setInterval(function () {
@@ -84,28 +108,28 @@ io.sockets.on('connection', function (socket) {
   if (typeof session.shipId === 'undefined' || session.shipId === null) {
     // TODO: This will occasionally error out if the client is still running while the node server get's restarted
     // possible solution is to use the sessionID to identify the ship
+    //
+    // TODO: This will CRASH if the ship is destroyed and the client tries to reconnect
 
     // first time here? get yer'self a ship!
-    ship = new Ship(
-      'ship',
+    ship = new Ship();
+    ship.position = new THREE.Vector3(
       Math.random() * 1000 - 500,  
       Math.random() * 1000 - 500,  
       Math.random() * 1000 - 500
     );
-    ship.id = ++shipCounter;
+  
 
     session.shipId = ship.id;
     session.save();
     world.addObject(ship);
-    newShip = true; // so we can tell the world about us
   } else {
     // otherwise find the ship in the ships array
-    ship = world.findObjectById(session.shipId);
+    ship = world.objects.get(session.shipId);
   }
 
   console.log(' [*] Client connection, sid: ' + session.id + ' shipId: ' + session.shipId)
-  socket.emit('openspace.welcome', {msg: 'Welcome to OpenSpace', ship: ship, world: world.getWorldState()});
-  socket.broadcast.emit('openspace.new.ship', {msg: 'Ship detected', ship: ship.getState()}); // tell everyone (but us) that we arrived
+  socket.emit('openspace.welcome', {msg: 'Welcome to OpenSpace', ship: ship.toJSON(), world: world.getWorldState()});
 
   socket.on('ship.drive', function(data) {
     ship.drive();
@@ -116,55 +140,37 @@ io.sockets.on('connection', function (socket) {
   });
 
   socket.on('torpedo.fire', function(data, fn) {
-    // TODO: it would be great if this were integrated into the ship object
-    if (ship.torpedoInventory > 0){
-    var torpedo = new Ship('torpedo');
-    torpedo.id = ++shipCounter;
-    torpedo.setState(ship.getState());
-    torpedo.ownerId = ship.id; // set a reference to the owning ship
-    torpedo.drive(1);
-    world.addObject(torpedo);
-    if (_.isFunction(fn)) {
+    // create an empty function so we can always call something
+    if (!_.isFunction(fn))
+      fn = function(arg) {};
+
+    if (!ship.hasTorpedoes()) {
+      fn({status: 'failure', msg: 'Insufficient torpedo inventory'});
+      return;
+    }
+
+    var torpedo = ship.fireTorpedo();
+    if (torpedo) {
       fn({status: 'success', msg: 'Torpedo fired', id: torpedo.id});
-      ship.torpedoInventory -= 1;
-    };
-    socket.broadcast.emit('openspace.new.torpedo', { msg: 'Torpedo detected', ship: ship.getState(), torpedo: torpedo.getState()}); // the everyone (but us) that we attack!
-    }});
+    } else {
+      fn({status: 'failure', msg: 'Unknown torpedo error'});
+    }
+  });
 
   socket.on('torpedo.drive', function(data) {
-    torpedo = _.find(ship.torpedoes, function(torpedo) { return torpedo.id == data.torpedoId });
+    torpedo = ship.torpedoes.get(data.id);
     if (torpedo) {
       torpedo.drive(0.1);
     }
   });
 
   socket.on('torpedo.detonate', function(data) {
-    detonated = _.find(ship.torpedoes, function(torpedo) { return torpedo.id == data.torpedoId });
-    console.log(' [x] Detonated torpedoId: ', detonated.id);
-    if (detonated) {
-      world.destroyObject(detonated);
-      // calc damage radius
-      var pos = detonated.position;
-      var dVector = new THREE.Vector3(pos.x, pos.y, pos.z);
-      console.log(dVector);
-      _.each(world.objects, function(obj) {
-        obj.damage(200000/Math.pow(obj.distanceTo(dVector),2));
-        if (obj.hull <= 0){
-          world.destroyObject(obj);
-          if (obj.type == 'ship') {
-            io.sockets.emit('openspace.destroy.ship', { msg: 'Ship destroyed', ship: obj.getState()})
-          }
-        };
-      });
+    ship.detonate(data.torpedoId);
 
-      // remove the torpedo from the world and notify
-      io.sockets.emit('openspace.detonate.torpedo', { msg: 'Torpedo detonated', torpedo: detonated.getState()});
-      detonated = null;
-    }
   });
 
   socket.on('ship.destruct', function(message, fn) {
-    world.destroyObject(ship);
+    ship.selfDestruct();
     ship = null;
     session.shipId = null;
     session.save();
