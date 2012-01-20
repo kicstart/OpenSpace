@@ -12,14 +12,44 @@ define([
 
     //TODO: Should we store the THREE objects in the attributes hash, or directly on the object?
     initialize: function(options) {
-      this.id = this.cid; 
+      if (typeof options.id === 'undefined') // set the id to the generated id if not specified
+        this.id = this.cid; 
 
       this.position =         new THREE.Vector3();
+      if (options.position) {
+        this.position.copy(options.position);
+        this.unset('position', {silent: true});
+      }
+
       this.velocity =         new THREE.Vector3();
+      if (options.velocity) {
+        this.velocity.copy(options.velocity);
+        this.unset('velocity', {silent: true});
+      }
+
       this.angularVelocity =  new THREE.Vector3();
+      if (options.angularVelocity) {
+        this.angularVelocity.copy(options.angularVelocity);
+        this.unset('angularVelocity', {silent: true});
+      }
+
       this.scale =            new THREE.Vector3();
+      if (options.scale) {
+        this.scale.copy(options.scale);
+        this.unset('scale', {silent: true});
+      }
+
       this.quaternion =       THREE.quaternionFromYawPitchRoll(0,0,0);
+      if (options.quaternion) {
+        this.quaternion.copy(options.quaternion);
+        this.unset('quaternion', {silent: true});
+      }
+
       this.matrix =           new THREE.Matrix4();
+      if (options.matrix) {
+        this.matrix.copy(options.matrix);
+        this.unset('matrix', {silent: true});
+      }
     },
 
     animate: function() {
@@ -120,6 +150,7 @@ define([
       this.angularVelocity.copy(json.angularVelocity);
 
       this.quaternion.copy(json.quaternion);
+      this.change();
     },
   });
 

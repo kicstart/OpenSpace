@@ -59,7 +59,7 @@ world.objects.bind('add', function(obj) {
 
 // set the gameLoop update function
 world.gameLoop = function() {
-  io.sockets.emit('openspace.loop', world.getWorldState());
+  io.sockets.emit('openspace.loop', world.animate());
 }
 world.startLoop();
 
