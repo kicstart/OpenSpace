@@ -271,6 +271,7 @@
           x.load(function(mesh){scene.add(mesh)});
         });
         socket.on('openspace.destroy.ship', function(message){
+          console.log('destroy');
           if (message.ship.id == shipID){
               var loose = document.createElement('div');
               loose.className = 'redDeath';

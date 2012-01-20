@@ -39,6 +39,7 @@ app.configure(function() {
 // Setup the world and the world communication
 var world = new World();
 world.bind('destroyed', function(obj) {
+  console.log(' [x] Vessel destroyed ' + obj.id);
   if (obj.get('type') == 'ship') {
     io.sockets.emit('openspace.destroy.ship', { msg: 'Ship destroyed', ship: obj.toJSON()})
   }
@@ -104,22 +105,11 @@ io.sockets.on('connection', function (socket) {
   // objects with their member functions, so we just need to retrieve
   // the ship by it's id
   var ship = null; // called ship for now, for reference below
-  var newShip = false;
-  if (typeof session.shipId === 'undefined' || session.shipId === null) {
-    // TODO: This will occasionally error out if the client is still running while the node server get's restarted
-    // possible solution is to use the sessionID to identify the ship
-    //
-    // TODO: This will CRASH if the ship is destroyed and the client tries to reconnect
-
-    // first time here? get yer'self a ship!
-    ship = new Ship();
-    ship.position = new THREE.Vector3(
-      Math.random() * 1000 - 500,  
-      Math.random() * 1000 - 500,  
-      Math.random() * 1000 - 500
-    );
-  
-
+  if (typeof session.shipId === 'undefined'
+      || session.shipId === null 
+      || !world.objects.get(session.shipId)) {
+      
+    ship = world.getNewRandomShip();
     session.shipId = ship.id;
     session.save();
     world.addObject(ship);
