@@ -89,24 +89,21 @@
       }
 
       function updatePosition(worldSignal) {
-          for(var i=0;i<world.ships.length;i++){
-            var m = world.ships[i];
-            ships[m.id].hull = m.hull;
-            ships[m.id].position.set(m.position.x, m.position.y, m.position.z);
-            ships[m.id].velocity = m.velocity;
-            ships[m.id].angularVelocity = m.angularVelocity;
-            ships[m.id].mesh.quaternion.set(
+          for(var i=0;i<world.vessels.length;i++){
+            var m = world.vessels[i];
+            var v = {};
+            if (m.type == 'ship') {
+              v = ships[m.id];
+            } else {
+              v = torpedoes[m.id];
+            }
+            v.hull = m.hull;
+            v.position.set(m.position.x, m.position.y, m.position.z);
+            v.velocity = m.velocity;
+            v.angularVelocity = m.angularVelocity;
+            v.mesh.quaternion.set(
               m.quaternion.x, m.quaternion.y, m.quaternion.z, m.quaternion.w
             ); 
-          };
-          for(var i=0;i<world.torpedoes.length;i++){
-            var torp = world.torpedoes[i];
-            torpedoes[torp.id].position.set(torp.position.x, torp.position.y, torp.position.z);
-            torpedoes[torp.id].velocity = torp.velocity;
-            torpedoes[torp.id].angularVelocity = torp.angularVelocity;
-            torpedoes[torp.id].mesh.quaternion.set(
-              torp.quaternion.x, torp.quaternion.y, torp.quaternion.z, torp.quaternion.w
-            );
           };
       };    
   
@@ -232,16 +229,18 @@
          shipID = msg.ship.id;
          // Add the Ships Mesh
          world = msg.world;
-         for (var i=0;i<world.ships.length;i++){
-           var s = new Ship(world.ships[i].id, shipClasses.MartianDestroyer);
-           s.id = world.ships[i].id;
-           ships[s.id] = s;
-         };
-         // Add the Torpedo Meshs
-         for (var i=0; i<world.torpedoes.length; i++){
-           var t = new Ship(world.torpedoes[i].id, shipClasses.TorpedoMkI);
-           t.id = world.torpedoes[i].id;
-           torpedoes[t.id] = t;
+         for (var i=0;i<world.vessels.length;i++){
+           if (world.vessels[i].type == 'ship') {
+             // ships
+             var s = new Ship(world.vessels[i].id, shipClasses.MartianDestroyer);
+             s.id = world.vessels[i].id;
+             ships[s.id] = s;
+           } else {
+             // torpedoes
+             var t = new Ship(world.vessels[i].id, shipClasses.TorpedoMkI);
+             t.id = world.vessels[i].id;
+             torpedoes[t.id] = t;
+           }
          };
          init();
          animate();
