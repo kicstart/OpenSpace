@@ -2,7 +2,8 @@ define([
   'backbone',
   'underscore',
   'collection/vessels',
-], function(Backbone, _, Vessels) {
+  'model/ship',
+], function(Backbone, _, Vessels, Ship) {
   var World = Backbone.Model.extend({
     defaults: {
       gameTime: 33,
@@ -27,6 +28,17 @@ define([
 
     removeObject: function(obj) {
       this.objects.remove(obj);
+    },
+
+    getNewRandomShip: function() {
+      var ship = new Ship();
+      ship.position = new THREE.Vector3(
+        Math.random() * 1000 - 500,
+        Math.random() * 1000 - 500,
+        Math.random() * 1000 - 500
+      );
+
+      return ship;
     },
 
     onDetonation: function(detonated) {
