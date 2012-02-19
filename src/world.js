@@ -56,6 +56,7 @@ define([
     },
 
     onDestroyObject: function(obj) {
+      this.trigger('destroyed', obj);
       this.objects.remove(obj);
     },
 
